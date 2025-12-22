@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🦄 Unicorn Runner</title>
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(to bottom, #9b59b6, #e74c3c);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+#container {
+  text-align: center;
+  padding: 20px;
+}
+
+#gameCanvas {
+  border: 5px solid #e91e63;
+  border-radius: 10px;
+  background: #87CEEB;
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  touch-action: none;
+}
+
+h1 {
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  margin: 0 0 10px 0;
+}
+
+#controls {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+button {
+  padding: 15px 25px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#jump { background: #4CAF50; }
+#double { background: #2196F3; }
+#poop { background: #795548; }
+#horn { background: #00BCD4; }
+
+button:active {
+  transform: scale(0.95);
+}
+
+#info {
+  color: white;
+  margin-top: 10px;
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<div id="container">
+  <h1>🦄 Unicorn Runner 💩</h1>
+  <canvas id="gameCanvas" width="360" height="640"></canvas>
+  <div id="controls">
+    <button id="jump">Tap to Fly ✈️</button>
+    <button id="double">Big Boost ⬆️</button>
+    <button id="poop">💩 Poop (←)</button>
+    <button id="horn">⚡ Horn (→)</button>
+  </div>
+  <div id="info">
+    Score: <span id="score">0</span><br>
+    <span id="poopMeter"></span>
+  </div>
+</div>
+
+<script>
+try {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  
+  // Difficulty modes (NES style!)
+  const DIFFICULTIES = {
+    easy: {
+      name: 'EASY',
+      levelDistances: [800, 1000, 1200, 1400, 1600, 1800, 2000],
+      speedMultiplier: 0.8,
+      flySpawnRate: 8000, // Slower spawns
+      health: 5 // More hearts
+    },
+    medium: {
+      name: 'MEDIUM', 
+      levelDistances: [1600, 2000, 2400, 2800, 3200, 3600, 4000],
+      speedMultiplier: 1.0,
+      flySpawnRate: 6000,
+      health: 3
+    },
+    hard: {
+      name: 'HARD',
+      levelDistances: [2400, 3000, 3600, 4200, 4800, 5400, 6000],
+      speedMultiplier: 1.2,
+      flySpawnRate: 4000, // Faster spawns
+      health: 3
+    }
+  };
+  
+  const GROUND = 560;
+  const GRAVITY = 0.8;
+  
+  // Sensory-safe muted colors
+  const SAFE_COLORS = {
+    'Red': '#C97A7A',
+    'Orange': '#D4A373',
+    'Yellow': '#E6D690',
+    'Green': '#8FB996',
+    'Blue': '#7AAED6',
+    'Indigo': '#8A84C1',
+    'Violet': '#B48CC8'
+  };
+  
+  // Load butterfly sprite sheet
+  const butterflySprite = new Image();
+  butterflySprite.src = 'data:image/png;base64,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';
+  const BUTTERFLY_FRAME_WIDTH = 128;
+  const BUTTERFLY_FRAME_HEIGHT = 128;
+  const BUTTERFLY_TOTAL_FRAMES = 6;
+  
+  let game = {
+    difficulty: null, // 'easy', 'medium', or 'hard'
+    showDifficultySelect: true,
+    unicorn: { x: 80, y: 480, w: 50, h: 50, vy: 0, grounded: false, canDouble: true },
+    frontFlies: [], // Flies attacking from front (use horn)
+    rearFlies: [], // Flies attacking from behind (use poop)
+    poops: [],
+    hornBlasts: [],
+    pits: [],
+    waterPools: [],
+    poopAmmo: 5,
+    maxPoop: 5,
+    plugged: false,
+    tootsRemaining: 0,
+    hay: [],
+    grain: [],
+    flowers: [], // Wilted flowers on ground
+    flowersPooped: 0, // Counter for flowers pooped this level
+    essences: [], // Rainbow essences to collect
+    essencesCollected: 0, // Counter for essences collected this level
+    stars: [], // Stars in the air to collect
+    starsCollected: 0, // Stars collected this level
+    butterfly: null, // Butterfly guardian { x, y, targetFly, attackStartTime, expiresAt }
+    butterflyFrame: 0, // Current animation frame
+    butterflyLastFrame: 0, // Last frame update time
+    butterflyFrameInterval: 120, // Ms between frames
+    rainbowTrail: null, // Rainbow trail { expiresAt, particles: [] }
+    level: 0,
+    killsThisLevel: 0, // NEW: Track fly kills per level
+    killsNeeded: [10, 15, 20, 25, 30, 35, 40], // Kills needed per level
+    levels: [
+      { name: 'Red', color: '#FF0000', speed: 1, pitChance: 0.2, flyChance: 0, grainChance: 0, ringMotion: false },
+      { name: 'Orange', color: '#FF7F00', speed: 1.05, pitChance: 0.25, flyChance: 0.1, grainChance: 0, ringMotion: false },
+      { name: 'Yellow', color: '#FFFF00', speed: 1.1, pitChance: 0.3, flyChance: 0.15, grainChance: 0.2, ringMotion: false },
+      { name: 'Green', color: '#00FF00', speed: 1.15, pitChance: 0.35, flyChance: 0.25, grainChance: 0.25, ringMotion: true },
+      { name: 'Blue', color: '#0000FF', speed: 1.2, pitChance: 0.35, flyChance: 0.3, grainChance: 0.3, ringMotion: true },
+      { name: 'Indigo', color: '#4B0082', speed: 1.25, pitChance: 0.4, flyChance: 0.35, grainChance: 0.35, ringMotion: true },
+      { name: 'Violet', color: '#8B00FF', speed: 1.3, pitChance: 0.45, flyChance: 0.4, grainChance: 0.4, ringMotion: true }
+    ],
+    ring: null,
+    unlockedColors: [],
+    distance: 0,
+    levelComplete: false,
+    showSplash: true,
+    splashStart: Date.now(),
+    health: 3,
+    maxHealth: 3,
+    invincible: false,
+    invincibleUntil: 0,
+    bg: 0,
+    score: 0,
+    over: false,
+    lastFrontFlySpawn: Date.now() + 4000, // First fly spawns after 4 seconds
+    lastRearFlySpawn: Date.now() + 5000,
+    lastPitSpawn: Date.now() + 6000,
+    lastWaterSpawn: Date.now() + 8000,
+    lastHaySpawn: Date.now() + 4000,
+    lastGrainSpawn: Date.now() + 10000,
+    lastFlowerSpawn: Date.now() + 3000, // First flower after 3 seconds
+    lastStarSpawn: Date.now() + 5000, // First star after 5 seconds
+    speedMultiplier: 1,
+    baseSpeed: 3,
+    touchY: 0,
+    touchX: 0,
+    lastTapTime: 0,
+    lastSpaceTime: 0
+  };
+  
+  function update() {
+    if (game.showDifficultySelect) return; // Don't update during difficulty selection
+    if (game.over) return;
+    
+    if (game.showSplash) {
+      if (Date.now() - game.splashStart > 1200) {
+        game.showSplash = false;
+      }
+      return;
+    }
+    
+    const u = game.unicorn;
+    
+    if (!game.levelComplete) {
+      game.distance += 1;
+    }
+    
+    u.vy += GRAVITY;
+    u.y += u.vy;
+    
+    if (u.y >= GROUND - u.h) {
+      u.y = GROUND - u.h;
+      u.vy = 0;
+      u.grounded = true;
+      u.canDouble = true;
+    } else {
+      u.grounded = false;
+    }
+    
+    game.speedMultiplier = 1;
+    
+    game.waterPools.forEach(w => {
+      const inWater = u.x + u.w > w.x && u.x < w.x + w.w && u.y >= GROUND - u.h;
+      if (inWater) {
+        game.speedMultiplier = 0.5;
+      }
+    });
+    
+    const currentLevel = game.levels[game.level];
+    const levelSpeed = currentLevel ? currentLevel.speed : 1;
+    
+    // PROGRESSIVE FLY SPAWNING SYSTEM (gets harder each level!)
+    const diffConfig = game.difficulty ? DIFFICULTIES[game.difficulty] : DIFFICULTIES.medium;
+    
+    // Level-based fly spawn patterns
+    let flySpawnInterval, fliesPerWave, mixedDirections, rearFlyChance;
+    
+    switch(game.level) {
+      case 0: // Level 1 - RED (Learning)
+        flySpawnInterval = 3000; // Every 3 seconds (faster!)
+        fliesPerWave = 1;
+        mixedDirections = false;
+        rearFlyChance = 0.5; // 50% from behind!
+        break;
+      case 1: // Level 2 - ORANGE (2 flies, same direction)
+        flySpawnInterval = 3000;
+        fliesPerWave = 2;
+        mixedDirections = false;
+        rearFlyChance = 0.6; // 60% from behind!
+        break;
+      case 2: // Level 3 - YELLOW (2 flies, different directions)
+        flySpawnInterval = 2500;
+        fliesPerWave = 2;
+        mixedDirections = true;
+        rearFlyChance = 0.7; // 70% from behind!
+        break;
+      case 3: // Level 4 - GREEN (3 flies, random)
+        flySpawnInterval = 2000;
+        fliesPerWave = 3;
+        mixedDirections = true;
+        rearFlyChance = 0.75; // 75% from behind!
+        break;
+      case 4: // Level 5 - BLUE (3-4 flies, faster)
+        flySpawnInterval = 1800;
+        fliesPerWave = 3 + Math.floor(Math.random() * 2); // 3-4 flies
+        mixedDirections = true;
+        rearFlyChance = 0.8; // 80% from behind!
+        break;
+      case 5: // Level 6 - INDIGO (4-5 flies, very fast)
+        flySpawnInterval = 1500;
+        fliesPerWave = 4 + Math.floor(Math.random() * 2); // 4-5 flies
+        mixedDirections = true;
+        rearFlyChance = 0.85; // 85% from behind!
+        break;
+      case 6: // Level 7 - VIOLET (5-6 flies, CHAOS!)
+        flySpawnInterval = 1200;
+        fliesPerWave = 5 + Math.floor(Math.random() * 2); // 5-6 flies
+        mixedDirections = true;
+        rearFlyChance = 0.9; // 90% from behind!
+        break;
+      default:
+        flySpawnInterval = 3000;
+        fliesPerWave = 1;
+        mixedDirections = false;
+        rearFlyChance = 0.5;
+    }
+    
+    // Apply difficulty modifier to spawn rate
+    flySpawnInterval = flySpawnInterval * (diffConfig.flySpawnRate / 6000);
+    
+    // Spawn front flies (from ANY angle, moving toward unicorn!)
+    if (Date.now() - game.lastFrontFlySpawn > flySpawnInterval) {
+      const u = game.unicorn;
+      
+      // Spawn multiple flies per wave!
+      for (let i = 0; i < fliesPerWave; i++) {
+        // Decide if this fly comes from front or rear (use rearFlyChance!)
+        const isFrontFly = Math.random() > rearFlyChance;
+        
+        if (isFrontFly) {
+          // FRONT FLY - Random spawn position (right side)
+          const spawnSide = Math.random();
+          let spawnX, spawnY;
+          
+          if (spawnSide < 0.33) {
+            // Top-right corner
+            spawnX = 360;
+            spawnY = 50 + Math.random() * 150;
+          } else if (spawnSide < 0.66) {
+            // Right side (middle)
+            spawnX = 360;
+            spawnY = GROUND - 200 - Math.random() * 100;
+          } else {
+            // Bottom-right
+            spawnX = 360;
+            spawnY = GROUND - 100 - Math.random() * 50;
+          }
+          
+          // Calculate angle toward unicorn
+          const dx = u.x - spawnX;
+          const dy = u.y - spawnY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const speed = 2.5;
+          
+          game.frontFlies.push({
+            x: spawnX,
+            y: spawnY,
+            w: 30,
+            h: 20,
+            vx: (dx / dist) * speed,
+            vy: (dy / dist) * speed,
+            state: 'approaching',
+            swarmAngle: 0,
+            spawnTime: Date.now() // For butterfly targeting
+          });
+        } else {
+          // REAR FLY - Spawn from left
+          const spawnY = GROUND - 60 - Math.random() * 100;
+          game.rearFlies.push({
+            x: -30,
+            y: spawnY,
+            w: 30,
+            h: 20,
+            vx: 3,
+            state: 'approaching', // 'approaching' or 'swarming'
+            swarmAngle: Math.random() * Math.PI * 2, // Random starting angle
+            spawnTime: Date.now() // For butterfly targeting
+          });
+        }
+      }
+      
+      game.lastFrontFlySpawn = Date.now();
+    }
+    
+    // FLOWER & ESSENCE SYSTEM
+    // Spawn new wilted flowers continuously (every 2 seconds - LOTS MORE!)
+    if (Date.now() - game.lastFlowerSpawn > 2000) {
+      game.flowers.push({
+        x: 380, // Spawn just off right edge of screen
+        y: GROUND - 20,
+        w: 25,
+        h: 25,
+        wilted: true
+      });
+      game.lastFlowerSpawn = Date.now();
+    }
+    
+    // STAR SPAWNING SYSTEM (collectibles in the air!)
+    // Spawn new stars continuously (every 3 seconds)
+    if (Date.now() - game.lastStarSpawn > 3000) {
+      game.stars.push({
+        x: 380, // Spawn just off right edge of screen
+        y: 100 + Math.random() * 300, // Random height in the air (100-400px)
+        w: 20,
+        h: 20,
+        twinkle: Math.random() * Math.PI * 2 // For animation
+      });
+      game.lastStarSpawn = Date.now();
+    }
+    
+    // Move stars with screen
+    game.stars.forEach(s => {
+      s.x -= 3 * game.speedMultiplier;
+      s.twinkle += 0.1; // Animate twinkle
+    });
+    game.stars = game.stars.filter(s => s.x > -50);
+    
+    // Check unicorn collision with stars
+    game.stars = game.stars.filter(s => {
+      const dist = Math.sqrt((u.x + u.w/2 - s.x) ** 2 + (u.y + u.h/2 - s.y) ** 2);
+      if (dist < 30) {
+        // Collected star!
+        game.starsCollected++;
+        game.score += 10; // Immediate 10 points
+        scoreEl.textContent = game.score;
+        
+        // Spawn rainbow trail when 5 stars collected!
+        if (game.starsCollected === 5 && !game.rainbowTrail) {
+          game.rainbowTrail = {
+            particles: [],
+            expiresAt: Date.now() + 10000 // 10 seconds
+          };
+        }
+        
+        return false; // Remove star
+      }
+      return true; // Keep star
+    });
+    
+    // Move flowers with screen
+    game.flowers.forEach(f => {
+      f.x -= 3 * game.speedMultiplier;
+    });
+    game.flowers = game.flowers.filter(f => f.x > -50);
+    
+    // Check poop collision with wilted flowers
+    game.poops.forEach(p => {
+      game.flowers.forEach(f => {
+        if (f.wilted && !p.gas) {
+          const dist = Math.sqrt((p.x - f.x) ** 2 + (p.y - f.y) ** 2);
+          if (dist < 25) {
+            // BLOOM!
+            f.wilted = false;
+            game.flowersPooped++; // Count this flower!
+            
+            // Spawn butterfly when 5 flowers pooped!
+            if (game.flowersPooped === 5 && !game.butterfly) {
+              game.butterfly = {
+                angle: 0,
+                targetFly: null,
+                attackStartTime: 0,
+                expiresAt: Date.now() + 25000 // 25 seconds
+              };
+            }
+          }
+        }
+      });
+    });
+    
+    // BUTTERFLY BEHAVIOR
+    if (game.butterfly) {
+      // Check if expired
+      if (Date.now() > game.butterfly.expiresAt) {
+        game.butterfly = null;
+      } else {
+        // Orbit animation
+        game.butterfly.angle += 0.1;
+        
+        // Find oldest fly within 100px range if not currently attacking
+        if (!game.butterfly.targetFly || game.butterfly.targetFly.dead) {
+          let oldestFly = null;
+          let oldestTime = Date.now();
+          
+          // Check all flies (front and rear)
+          [...game.frontFlies, ...game.rearFlies].forEach(fly => {
+            const dist = Math.sqrt((fly.x - u.x) ** 2 + (fly.y - u.y) ** 2);
+            if (dist < 100) {
+              const flyTime = fly.spawnTime || 0;
+              if (flyTime < oldestTime) {
+                oldestTime = flyTime;
+                oldestFly = fly;
+              }
+            }
+          });
+          
+          if (oldestFly) {
+            game.butterfly.targetFly = oldestFly;
+            game.butterfly.attackStartTime = Date.now();
+            oldestFly.spawnTime = oldestFly.spawnTime || Date.now(); // Set if not exists
+          }
+        }
+        
+        // Attack current target
+        if (game.butterfly.targetFly) {
+          const elapsed = Date.now() - game.butterfly.attackStartTime;
+          
+          // Kill after 2 seconds
+          if (elapsed >= 2000) {
+            // Mark fly as dead
+            game.butterfly.targetFly.dead = true;
+            game.score += 50;
+            game.killsThisLevel++;
+            scoreEl.textContent = game.score;
+            game.butterfly.targetFly = null;
+          }
+        }
+      }
+    }
+    
+    // Remove dead flies (killed by butterfly)
+    game.frontFlies = game.frontFlies.filter(f => !f.dead);
+    game.rearFlies = game.rearFlies.filter(f => !f.dead);
+    
+    // RAINBOW TRAIL BEHAVIOR
+    if (game.rainbowTrail) {
+      // Check if expired
+      if (Date.now() > game.rainbowTrail.expiresAt) {
+        game.rainbowTrail = null;
+      } else {
+        // Add new particle at unicorn position
+        game.rainbowTrail.particles.push({
+          x: u.x,
+          y: u.y + u.h / 2,
+          spawnTime: Date.now()
+        });
+        
+        // Remove old particles (older than 1 second)
+        game.rainbowTrail.particles = game.rainbowTrail.particles.filter(p => {
+          return Date.now() - p.spawnTime < 1000;
+        });
+        
+        // Check trail collision with REAR flies only
+        game.rearFlies = game.rearFlies.filter(fly => {
+          for (let p of game.rainbowTrail.particles) {
+            const dist = Math.sqrt((fly.x - p.x) ** 2 + (fly.y - p.y) ** 2);
+            if (dist < 25) {
+              // Kill fly!
+              game.score += 50;
+              game.killsThisLevel++;
+              scoreEl.textContent = game.score;
+              return false; // Remove fly
+            }
+          }
+          return true; // Keep fly
+        });
+        
+        // Check trail collision with SWARMING front flies
+        game.frontFlies = game.frontFlies.filter(fly => {
+          if (fly.state === 'swarming') {
+            for (let p of game.rainbowTrail.particles) {
+              const dist = Math.sqrt((fly.x - p.x) ** 2 + (fly.y - p.y) ** 2);
+              if (dist < 25) {
+                // Kill fly!
+                game.score += 50;
+                game.killsThisLevel++;
+                scoreEl.textContent = game.score;
+                return false; // Remove fly
+              }
+            }
+          }
+          return true; // Keep fly
+        });
+      }
+    }
+    
+    // Move front flies (coming from various angles!)
+    game.frontFlies = game.frontFlies.filter(f => {
+      if (f.state === 'approaching') {
+        // Move toward unicorn
+        f.x += f.vx * levelSpeed * game.speedMultiplier;
+        f.y += f.vy * levelSpeed * game.speedMultiplier;
+        
+        // Check if reached unicorn (transition to swarming!)
+        const dist = Math.sqrt((f.x - u.x) ** 2 + (f.y - u.y) ** 2);
+        
+        if (dist < 40) {
+          // Reached unicorn! Start swarming around butt
+          f.state = 'swarming';
+          f.swarmAngle = Math.random() * Math.PI * 2; // Random start angle
+        }
+        
+        // Remove if flew past off screen left
+        return f.x > -50;
+        
+      } else if (f.state === 'swarming') {
+        // Circle around unicorn's butt!
+        f.swarmAngle += 0.1;
+        f.x = u.x - 15 + Math.cos(f.swarmAngle) * 25;
+        f.y = u.y + 30 + Math.sin(f.swarmAngle) * 18;
+        
+        // Keep swarming (only poop can kill it now!)
+        return true;
+      }
+      
+      return true;
+    });
+    
+    // Move rear flies (coming from left with SWARMING behavior!)
+    game.rearFlies = game.rearFlies.filter(f => {
+      if (f.state === 'approaching') {
+        // Move toward unicorn horizontally
+        f.x += f.vx * levelSpeed * game.speedMultiplier;
+        
+        // Check if close enough to start swarming (within 50 pixels)
+        const distToUnicorn = Math.sqrt((f.x - u.x) ** 2 + (f.y - u.y) ** 2);
+        if (distToUnicorn < 50) {
+          f.state = 'swarming';
+          f.swarmAngle = Math.atan2(f.y - u.y, f.x - u.x); // Angle from unicorn to fly
+        }
+      } else if (f.state === 'swarming') {
+        // Orbit around unicorn's REAR (butt area!)
+        f.swarmAngle += 0.05; // Rotation speed
+        const swarmRadius = 35;
+        const targetX = u.x - 15 + Math.cos(f.swarmAngle) * swarmRadius; // Behind unicorn
+        const targetY = u.y + 25 + Math.sin(f.swarmAngle) * swarmRadius;
+        
+        // Move toward target position
+        f.x += (targetX - f.x) * 0.1;
+        f.y += (targetY - f.y) * 0.1;
+        
+        // Bite unicorn if very close and not invincible
+        const distToBite = Math.sqrt((f.x - (u.x - 15)) ** 2 + (f.y - (u.y + 25)) ** 2);
+        if (!game.invincible && distToBite < 20) {
+          game.health--;
+          if (game.health <= 0) {
+            game.over = true;
+          } else {
+            game.invincible = true;
+            game.invincibleUntil = Date.now() + 1000;
+          }
+          return false; // Remove fly after biting
+        }
+      }
+      
+      // Check basic collision with unicorn (if not swarming and not invincible)
+      if (f.state === 'approaching' && !game.invincible) {
+        if (u.x < f.x + f.w && u.x + u.w > f.x && u.y < f.y + f.h && u.y + u.h > f.y) {
+          game.health--;
+          if (game.health <= 0) {
+            game.over = true;
+          } else {
+            game.invincible = true;
+            game.invincibleUntil = Date.now() + 1000;
+          }
+          return false; // Remove fly
+        }
+      }
+      
+      return f.x < 400 && f.x > -50; // Remove if off screen
+    });
+    
+    // Check if invincibility expired
+    if (game.invincible && Date.now() > game.invincibleUntil) {
+      game.invincible = false;
+    }
+    
+    game.poops = game.poops.filter(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      
+      if (p.x < -20 || p.y > 640) return false;
+      
+      let hit = false;
+      
+      // Poop hits REAR flies
+      game.rearFlies = game.rearFlies.filter(f => {
+        const dist = Math.sqrt((p.x - (f.x + f.w/2)) ** 2 + (p.y - (f.y + f.h/2)) ** 2);
+        
+        if (dist < 20) {
+          if (p.gas) {
+            // Toot = push fly back
+            f.x -= 30;
+            f.vx *= 0.5;
+            hit = true;
+            return true; // Keep fly
+          } else {
+            // Poop = kill fly
+            game.score += 50;
+            game.killsThisLevel++; // Count the kill!
+            scoreEl.textContent = game.score;
+            hit = true;
+            return false; // Remove fly
+          }
+        }
+        return true;
+      });
+      
+      // Poop ALSO hits SWARMING front flies (around your butt!)
+      game.frontFlies = game.frontFlies.filter(f => {
+        if (f.state === 'swarming') {
+          const dist = Math.sqrt((p.x - f.x) ** 2 + (p.y - f.y) ** 2);
+          
+          if (dist < 20) {
+            if (p.gas) {
+              // Toot = scatter fly temporarily
+              // (could add scatter behavior later)
+              hit = true;
+              return true;
+            } else {
+              // Poop = kill swarming fly!
+              game.score += 50;
+              game.killsThisLevel++; // Count the kill!
+              scoreEl.textContent = game.score;
+              hit = true;
+              return false; // Remove fly
+            }
+          }
+        }
+        return true;
+      });
+      
+      return !hit;
+    });
+    
+    
+    // Move horn blasts (only hit APPROACHING front flies!)
+    game.hornBlasts = game.hornBlasts.filter(b => {
+      // Move toward target
+      b.x += b.vx;
+      b.y += b.vy;
+      
+      // Check if hit APPROACHING front flies only (not swarming!)
+      let hit = false;
+      game.frontFlies = game.frontFlies.filter(f => {
+        if (f.state === 'approaching') {
+          const dist = Math.sqrt((b.x - (f.x + f.w/2)) ** 2 + (b.y - (f.y + f.h/2)) ** 2);
+          
+          if (dist < 20) {
+            // HIT! Kill fly
+            game.score += 50;
+            game.killsThisLevel++; // Count the kill!
+            scoreEl.textContent = game.score;
+            hit = true;
+            return false; // Remove fly
+          }
+        }
+        return true;
+      });
+      
+      // Remove if hit or off screen
+      return !hit && b.x < 400 && b.y < 700 && b.y > -50;
+    });
+    
+    // Spawn pits (jump timing challenge)
+    if (Date.now() - game.lastPitSpawn > 4000) {
+      const isWide = Math.random() > 0.5;
+      game.pits.push({
+        x: 360,
+        w: isWide ? 90 : 50,
+        type: isWide ? 'double' : 'single'
+      });
+      game.lastPitSpawn = Date.now();
+    }
+    
+    game.pits = game.pits.filter(p => {
+      p.x -= game.baseSpeed * levelSpeed * game.speedMultiplier;
+      
+      // Only die if unicorn's CENTER is DEEP in pit center (very forgiving!)
+      const unicornCenterX = u.x + u.w / 2;
+      const pitCenterStart = p.x + (p.w * 0.3); // 30% from left edge
+      const pitCenterEnd = p.x + (p.w * 0.7); // 30% from right edge (middle 40% only)
+      
+      const deepInPit = unicornCenterX > pitCenterStart && unicornCenterX < pitCenterEnd;
+      
+      if (deepInPit && u.y >= GROUND - u.h) {
+        game.over = true;
+      }
+      
+      return p.x + p.w > 0;
+    });
+    
+    if (Date.now() - game.lastWaterSpawn > 6000) {
+      game.waterPools.push({ x: 360, w: 70 });
+      game.lastWaterSpawn = Date.now();
+    }
+    
+    game.waterPools = game.waterPools.filter(w => {
+      w.x -= game.baseSpeed * levelSpeed * game.speedMultiplier;
+      return w.x + w.w > 0;
+    });
+    
+    if (Date.now() - game.lastHaySpawn > 5000) {
+      const isLarge = Math.random() > 0.6;
+      game.hay.push({
+        x: 360,
+        y: Math.random() > 0.5 ? GROUND - 20 : GROUND - 80,
+        w: isLarge ? 32 : 20,
+        h: isLarge ? 22 : 14,
+        size: isLarge ? 'large' : 'small'
+      });
+      game.lastHaySpawn = Date.now();
+    }
+    
+    game.hay = game.hay.filter(h => {
+      h.x -= game.baseSpeed * levelSpeed * game.speedMultiplier;
+      
+      const hit = u.x < h.x + h.w && u.x + u.w > h.x && u.y < h.y + h.h && u.y + u.h > h.y;
+      
+      if (hit) {
+        const poopGain = h.size === 'large' ? 5 : 3;
+        game.poopAmmo = Math.min(game.poopAmmo + poopGain, game.maxPoop);
+        return false;
+      }
+      
+      return h.x > -30;
+    });
+    
+    if (Date.now() - game.lastGrainSpawn > 7000) {
+      const isLarge = Math.random() > 0.5;
+      game.grain.push({ 
+        x: 360, 
+        y: GROUND - 20, 
+        w: isLarge ? 28 : 18, 
+        h: isLarge ? 24 : 16,
+        size: isLarge ? 'large' : 'small'
+      });
+      game.lastGrainSpawn = Date.now();
+    }
+    
+    game.grain = game.grain.filter(g => {
+      g.x -= game.baseSpeed * levelSpeed * game.speedMultiplier;
+      
+      const hit = u.x < g.x + g.w && u.x + u.w > g.x && u.y < g.y + g.h && u.y + u.h > g.y;
+      
+      if (hit) {
+        game.plugged = true;
+        const gasGain = g.size === 'large' ? 3 : 1;
+        game.tootsRemaining += gasGain;
+        return false;
+      }
+      
+      return g.x > -30;
+    });
+    
+    // Spawn ring when player kills enough flies!
+    const killsNeeded = game.killsNeeded[game.level] || 10;
+    
+    if (!game.ring && !game.levelComplete && currentLevel && game.killsThisLevel >= killsNeeded) {
+      game.ring = {
+        x: 360,
+        y: GROUND - 100,
+        r: 45,
+        color: currentLevel.color,
+        vy: currentLevel.ringMotion ? 1.5 : 0
+      };
+    }
+    
+    if (game.ring) {
+      game.ring.x -= 3 * game.speedMultiplier;
+      
+      if (game.ring.vy) {
+        game.ring.y += game.ring.vy;
+        if (game.ring.y < GROUND - 180 || game.ring.y > GROUND - 80) {
+          game.ring.vy *= -1;
+        }
+      }
+      
+      const centerX = u.x + u.w / 2;
+      const centerY = u.y + u.h / 2;
+      const dx = centerX - game.ring.x;
+      const dy = centerY - game.ring.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist < game.ring.r - 10) {
+        unlockColor(game.ring.color);
+      }
+      
+      if (game.ring.x < -100) {
+        game.ring = null;
+      }
+    }
+    
+    game.bg = (game.bg + 1.5 * levelSpeed * game.speedMultiplier) % 360;
+  }
+  
+  function draw() {
+    // Difficulty selection screen (NES style!)
+    if (game.showDifficultySelect) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 360, 640);
+      
+      // Title
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 32px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('🦄 UNICORN RUNNER 💩', 180, 80);
+      
+      // Subtitle
+      ctx.fillStyle = '#FFF';
+      ctx.font = '16px Arial';
+      ctx.fillText('SELECT DIFFICULTY', 180, 140);
+      
+      // Easy button
+      ctx.fillStyle = '#4CAF50';
+      ctx.fillRect(60, 200, 240, 60);
+      ctx.strokeStyle = '#2E7D32';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(60, 200, 240, 60);
+      ctx.fillStyle = '#FFF';
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText('EASY', 180, 235);
+      ctx.font = '14px Arial';
+      ctx.fillText('5 Hearts • Short Levels', 180, 252);
+      
+      // Medium button
+      ctx.fillStyle = '#FF9800';
+      ctx.fillRect(60, 290, 240, 60);
+      ctx.strokeStyle = '#E65100';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(60, 290, 240, 60);
+      ctx.fillStyle = '#FFF';
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText('MEDIUM', 180, 325);
+      ctx.font = '14px Arial';
+      ctx.fillText('3 Hearts • Medium Levels', 180, 342);
+      
+      // Hard button
+      ctx.fillStyle = '#F44336';
+      ctx.fillRect(60, 380, 240, 60);
+      ctx.strokeStyle = '#B71C1C';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(60, 380, 240, 60);
+      ctx.fillStyle = '#FFF';
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText('HARD', 180, 415);
+      ctx.font = '14px Arial';
+      ctx.fillText('3 Hearts • Long Levels', 180, 432);
+      
+      // Instructions
+      ctx.fillStyle = '#888';
+      ctx.font = '12px Arial';
+      ctx.fillText('Click or tap to select', 180, 500);
+      
+      ctx.textAlign = 'left';
+      return;
+    }
+    
+    if (game.showSplash && game.levels[game.level]) {
+      const lvl = game.levels[game.level];
+      const bg = SAFE_COLORS[lvl.name] || '#E6D690';
+      
+      const elapsed = Date.now() - game.splashStart;
+      const alpha = Math.min(1, elapsed / 300);
+      ctx.globalAlpha = alpha;
+      
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, 360, 640);
+      
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'center';
+      
+      ctx.font = 'bold 36px Arial';
+      ctx.fillText('LEVEL ' + (game.level + 1), 180, 260);
+      
+      ctx.font = '28px Arial';
+      ctx.fillText(lvl.name.toUpperCase(), 180, 310);
+      
+      ctx.textAlign = 'left';
+      ctx.globalAlpha = 1;
+      return;
+    }
+    
+    ctx.fillStyle = '#87CEEB';
+    ctx.fillRect(0, 0, 360, 640);
+    
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 3; i++) {
+      const x = (i * 150 - game.bg) % 360;
+      ctx.beginPath();
+      ctx.arc(x, 100 + i * 60, 20, 0, Math.PI * 2);
+      ctx.arc(x + 25, 100 + i * 60, 25, 0, Math.PI * 2);
+      ctx.arc(x + 50, 100 + i * 60, 20, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.fillStyle = '#90EE90';
+    ctx.fillRect(0, GROUND, 360, 80);
+    
+    ctx.fillStyle = '#4B2E1E';
+    game.pits.forEach(p => {
+      ctx.fillRect(p.x, GROUND, p.w, 80);
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px Arial';
+      ctx.fillText(p.type === 'double' ? '2x' : '1x', p.x + p.w/2 - 8, GROUND + 20);
+      ctx.fillStyle = '#4B2E1E';
+    });
+    
+    ctx.fillStyle = 'rgba(0, 150, 255, 0.6)';
+    game.waterPools.forEach(w => {
+      ctx.fillRect(w.x, GROUND + 5, w.w, 30);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(w.x + 20, GROUND + 15, 8, 0, Math.PI);
+      ctx.stroke();
+    });
+    
+    ctx.fillStyle = '#228B22'; // Green hay
+    ctx.strokeStyle = '#006400'; // Dark green outline
+    ctx.lineWidth = 2;
+    game.hay.forEach(h => {
+      ctx.fillRect(h.x, h.y, h.w, h.h);
+      ctx.strokeRect(h.x, h.y, h.w, h.h);
+    });
+    
+    ctx.fillStyle = '#FFD700'; // Yellow grain
+    ctx.strokeStyle = '#DAA520'; // Dark yellow outline
+    game.grain.forEach(g => {
+      ctx.beginPath();
+      ctx.arc(g.x + g.w/2, g.y + g.h/2, g.w/2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    });
+    
+    // Draw STARS (collectibles in the air!)
+    game.stars.forEach(s => {
+      const twinkleSize = 10 + Math.sin(s.twinkle) * 3; // Pulsing size
+      const twinkleAlpha = 0.7 + Math.sin(s.twinkle * 1.5) * 0.3; // Pulsing opacity
+      
+      ctx.globalAlpha = twinkleAlpha;
+      
+      // Outer glow
+      const gradient = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, twinkleSize + 5);
+      gradient.addColorStop(0, '#FFFFFF');
+      gradient.addColorStop(0.5, '#FFD700');
+      gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, twinkleSize + 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Star shape (5 points)
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+        const nextAngle = ((i + 0.5) / 5) * Math.PI * 2 - Math.PI / 2;
+        
+        const outerX = s.x + Math.cos(angle) * twinkleSize;
+        const outerY = s.y + Math.sin(angle) * twinkleSize;
+        const innerX = s.x + Math.cos(nextAngle) * (twinkleSize * 0.4);
+        const innerY = s.y + Math.sin(nextAngle) * (twinkleSize * 0.4);
+        
+        if (i === 0) {
+          ctx.moveTo(outerX, outerY);
+        } else {
+          ctx.lineTo(outerX, outerY);
+        }
+        ctx.lineTo(innerX, innerY);
+      }
+      ctx.closePath();
+      ctx.fill();
+      
+      // White center highlight
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, twinkleSize * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.globalAlpha = 1;
+    });
+    
+    // Draw FLOWERS
+    game.flowers.forEach(f => {
+      if (f.wilted) {
+        // Wilted flower (gray/brown)
+        ctx.fillStyle = '#8B7355';
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#654321';
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Bloomed flower (colorful!)
+        const currentLevel = game.levels[game.level];
+        ctx.fillStyle = currentLevel ? currentLevel.color : '#FF69B4';
+        for (let i = 0; i < 5; i++) {
+          const angle = (i / 5) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.arc(f.x + Math.cos(angle) * 8, f.y + Math.sin(angle) * 8, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Center
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    
+    // Draw RAINBOW TRAIL
+    if (game.rainbowTrail) {
+      game.rainbowTrail.particles.forEach((p, i) => {
+        const age = Date.now() - p.spawnTime;
+        const alpha = 1 - (age / 1000); // Fade out over 1 second
+        
+        // Rainbow gradient
+        const colors = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#8B00FF'];
+        const colorIndex = i % colors.length;
+        
+        ctx.globalAlpha = alpha * 0.7;
+        ctx.fillStyle = colors[colorIndex];
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Sparkle
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.globalAlpha = 1;
+      });
+    }
+    
+    // Draw FRONT flies (approaching = ⚡, swarming = 💩)
+    game.frontFlies.forEach(f => {
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(f.x + 15, f.y + 10, 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Wings
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(f.x + 9, f.y + 6);
+      ctx.lineTo(f.x + 3, f.y);
+      ctx.moveTo(f.x + 21, f.y + 6);
+      ctx.lineTo(f.x + 27, f.y);
+      ctx.stroke();
+      
+      // Red eyes
+      ctx.fillStyle = '#f00';
+      ctx.beginPath();
+      ctx.arc(f.x + 12, f.y + 8, 2, 0, Math.PI * 2);
+      ctx.arc(f.x + 18, f.y + 8, 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Label changes based on state!
+      if (f.state === 'approaching') {
+        // ⚡ = use horn to shoot it!
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText('⚡', f.x + 10, f.y - 5);
+      } else if (f.state === 'swarming') {
+        // 💩 = swarming your butt, use poop!
+        ctx.fillStyle = '#8B4513';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText('💩', f.x + 10, f.y - 5);
+        
+        // Draw circle path around butt (visual indicator)
+        ctx.strokeStyle = 'rgba(139, 69, 19, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(game.unicorn.x, game.unicorn.y + 30, 25, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+    
+    // Draw REAR flies (coming from left, use poop!)
+    game.rearFlies.forEach(f => {
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(f.x + 15, f.y + 10, 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Wings
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(f.x + 9, f.y + 6);
+      ctx.lineTo(f.x + 3, f.y);
+      ctx.moveTo(f.x + 21, f.y + 6);
+      ctx.lineTo(f.x + 27, f.y);
+      ctx.stroke();
+      
+      // Red eyes
+      ctx.fillStyle = '#f00';
+      ctx.beginPath();
+      ctx.arc(f.x + 12, f.y + 8, 2, 0, Math.PI * 2);
+      ctx.arc(f.x + 18, f.y + 8, 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Label (💩 = use poop)
+      ctx.fillStyle = '#8B4513';
+      ctx.font = 'bold 16px Arial';
+      ctx.fillText('💩', f.x + 10, f.y - 5);
+    });
+    
+    const u = game.unicorn;
+    
+    // Draw unicorn with invincibility flashing
+    const drawUnicorn = !game.invincible || Math.floor(Date.now() / 100) % 2 === 0;
+    
+    if (drawUnicorn) {
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.fillRect(u.x, u.y + 15, 35, 25);
+      ctx.strokeRect(u.x, u.y + 15, 35, 25);
+    
+    ctx.beginPath();
+    ctx.arc(u.x + 40, u.y + 15, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.fillStyle = '#FF1493';
+    ctx.beginPath();
+    ctx.moveTo(u.x + 40, u.y);
+    ctx.lineTo(u.x + 35, u.y + 15);
+    ctx.lineTo(u.x + 45, u.y + 15);
+    ctx.fill();
+    
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(u.x + 42, u.y + 12, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    const rainbowOrder = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#8B00FF'];
+    
+    rainbowOrder.forEach((color, i) => {
+      if (game.unlockedColors.includes(color)) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(u.x + 32, u.y + 10, 8 - i, 0, Math.PI);
+        ctx.stroke();
+      }
+    });
+    
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.fillRect(u.x + 10, u.y + 35, 6, 15);
+    ctx.strokeRect(u.x + 10, u.y + 35, 6, 15);
+    ctx.fillRect(u.x + 25, u.y + 35, 6, 15);
+    ctx.strokeRect(u.x + 25, u.y + 35, 6, 15);
+    
+    if (game.unlockedColors.length > 0) {
+      game.unlockedColors.forEach((color, idx) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(u.x, u.y + 25 + idx * 3);
+        ctx.quadraticCurveTo(u.x - 15, u.y + 30 + idx * 3, u.x - 10, u.y + 40 + idx * 3);
+        ctx.stroke();
+      });
+    } else {
+      ctx.strokeStyle = '#FF69B4';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(u.x, u.y + 25);
+      ctx.quadraticCurveTo(u.x - 15, u.y + 30, u.x - 10, u.y + 40);
+      ctx.stroke();
+    }
+    
+    if (game.speedMultiplier < 1) {
+      ctx.fillStyle = 'rgba(0, 100, 255, 0.3)';
+      ctx.fillRect(u.x - 5, u.y - 5, u.w + 10, u.h + 10);
+    }
+    } // End drawUnicorn if block
+    
+    // Draw BUTTERFLY
+    if (game.butterfly) {
+      const u = game.unicorn;
+      
+      if (game.butterfly.targetFly) {
+        // Attacking - draw at target fly position
+        const target = game.butterfly.targetFly;
+        const attackAngle = (Date.now() / 50) % (Math.PI * 2); // Fast orbit around fly
+        
+        const butterflyX = target.x + Math.cos(attackAngle) * 15;
+        const butterflyY = target.y + Math.sin(attackAngle) * 15;
+        
+        // Draw attacking butterfly with animated sprite
+        const currentLevel = game.levels[game.level];
+        const butterflyColor = currentLevel ? currentLevel.color : '#FF69B4';
+        
+        // Update animation frame
+        if (Date.now() - game.butterflyLastFrame >= game.butterflyFrameInterval) {
+          game.butterflyFrame = (game.butterflyFrame + 1) % BUTTERFLY_TOTAL_FRAMES;
+          game.butterflyLastFrame = Date.now();
+        }
+        
+        // Draw butterfly sprite (smaller size for game)
+        const spriteSize = 30; // Smaller than original 128px
+        const sx = game.butterflyFrame * BUTTERFLY_FRAME_WIDTH;
+        ctx.save();
+        ctx.translate(butterflyX, butterflyY);
+        ctx.drawImage(
+          butterflySprite,
+          sx, 0, BUTTERFLY_FRAME_WIDTH, BUTTERFLY_FRAME_HEIGHT,
+          -spriteSize/2, -spriteSize/2, spriteSize, spriteSize
+        );
+        ctx.restore();
+        
+        // Attack sparkles
+        ctx.fillStyle = '#FFD700';
+        for (let i = 0; i < 3; i++) {
+          const sparkleAngle = (Date.now() / 100 + i * Math.PI * 2 / 3) % (Math.PI * 2);
+          const sparkleX = target.x + Math.cos(sparkleAngle) * 20;
+          const sparkleY = target.y + Math.sin(sparkleAngle) * 20;
+          ctx.beginPath();
+          ctx.arc(sparkleX, sparkleY, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Attack timer line
+        const elapsed = Date.now() - game.butterfly.attackStartTime;
+        const progress = Math.min(1, elapsed / 2000);
+        ctx.strokeStyle = '#FF0000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, 25, -Math.PI/2, -Math.PI/2 + (progress * Math.PI * 2));
+        ctx.stroke();
+        
+      } else {
+        // Idle - orbiting unicorn
+        const orbitX = u.x + Math.cos(game.butterfly.angle) * 40;
+        const orbitY = u.y + 20 + Math.sin(game.butterfly.angle) * 30;
+        
+        const currentLevel = game.levels[game.level];
+        const butterflyColor = currentLevel ? currentLevel.color : '#FF69B4';
+        
+        // Update animation frame
+        if (Date.now() - game.butterflyLastFrame >= game.butterflyFrameInterval) {
+          game.butterflyFrame = (game.butterflyFrame + 1) % BUTTERFLY_TOTAL_FRAMES;
+          game.butterflyLastFrame = Date.now();
+        }
+        
+        // Draw butterfly sprite (smaller size for game)
+        const spriteSize = 30;
+        const sx = game.butterflyFrame * BUTTERFLY_FRAME_WIDTH;
+        ctx.save();
+        ctx.translate(orbitX, orbitY);
+        ctx.drawImage(
+          butterflySprite,
+          sx, 0, BUTTERFLY_FRAME_WIDTH, BUTTERFLY_FRAME_HEIGHT,
+          -spriteSize/2, -spriteSize/2, spriteSize, spriteSize
+        );
+        ctx.restore();
+        
+        // Sparkle trail
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+        ctx.beginPath();
+        ctx.arc(orbitX, orbitY, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    game.poops.forEach(p => {
+      if (p.gas) {
+        ctx.fillStyle = 'rgba(150, 150, 150, 0.6)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    
+    // Horn blasts (auto-targeting projectiles)
+    game.hornBlasts.forEach(b => {
+      // Outer glow
+      ctx.strokeStyle = '#00FFFF';
+      ctx.lineWidth = 8;
+      ctx.shadowColor = '#00FFFF';
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 10, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Inner core
+      ctx.fillStyle = '#FFFFFF';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.shadowBlur = 0;
+    });
+    
+    if (game.ring) {
+      ctx.strokeStyle = game.ring.color;
+      ctx.lineWidth = 8;
+      ctx.shadowColor = game.ring.color;
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.arc(game.ring.x, game.ring.y, game.ring.r, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(game.ring.x, game.ring.y, game.ring.r - 8, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.shadowBlur = 0;
+      
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('JUMP THROUGH!', game.ring.x, game.ring.y - game.ring.r - 10);
+      ctx.textAlign = 'left';
+    }
+    
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 20px Arial';
+    ctx.fillText('Score: ' + game.score, 15, 30);
+    
+    // Show difficulty
+    if (game.difficulty) {
+      ctx.fillStyle = '#666';
+      ctx.font = '12px Arial';
+      const diffText = DIFFICULTIES[game.difficulty].name;
+      ctx.fillText('Mode: ' + diffText, 250, 30);
+    }
+    
+    const currentLevel = game.levels[game.level];
+    if (currentLevel) {
+      ctx.fillStyle = currentLevel.color;
+      ctx.font = 'bold 16px Arial';
+      ctx.fillText('Level ' + (game.level + 1) + ': ' + currentLevel.name, 15, 55);
+      
+      // Kill counter (how many flies killed / needed)
+      const killsNeeded = game.killsNeeded[game.level] || 10;
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText('Kills: ' + game.killsThisLevel + ' / ' + killsNeeded, 250, 55);
+      
+      // Flower counter (for butterfly at 5 flowers)
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 13px Arial';
+      ctx.fillText('🌸 Flowers: ', 15, 70);
+      
+      // Draw flower boxes
+      for (let i = 0; i < 5; i++) {
+        if (i < game.flowersPooped) {
+          ctx.fillStyle = '#FFD700'; // Pooped (gold)
+        } else {
+          ctx.fillStyle = '#CCC'; // Not pooped (gray)
+        }
+        ctx.fillRect(110 + i * 16, 60, 14, 14);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(110 + i * 16, 60, 14, 14);
+      }
+      
+      // Star counter (for rainbow at 5 stars)
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 13px Arial';
+      ctx.fillText('⭐ Stars: ', 15, 90);
+      
+      // Draw star boxes
+      for (let i = 0; i < 5; i++) {
+        if (i < game.starsCollected) {
+          ctx.fillStyle = '#FFD700'; // Collected (gold)
+        } else {
+          ctx.fillStyle = '#CCC'; // Not collected (gray)
+        }
+        ctx.fillRect(90 + i * 16, 80, 14, 14);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(90 + i * 16, 80, 14, 14);
+      }
+      
+      // Butterfly timer
+      if (game.butterfly) {
+        const timeLeft = Math.ceil((game.butterfly.expiresAt - Date.now()) / 1000);
+        ctx.fillStyle = currentLevel ? currentLevel.color : '#FF69B4';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText('🦋 Butterfly: ' + timeLeft + 's', 200, 70);
+      }
+      
+      // Rainbow trail timer
+      if (game.rainbowTrail) {
+        const timeLeft = Math.ceil((game.rainbowTrail.expiresAt - Date.now()) / 1000);
+        ctx.fillStyle = '#FF0000';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText('🌈 Trail: ' + timeLeft + 's', 200, 90);
+      }
+    }
+    
+    const rainbowOrderProg = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#8B00FF'];
+    
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(15, 75, 150, 25);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(15, 75, 150, 25);
+    
+    const stripeWidth = 150 / 7;
+    rainbowOrderProg.forEach((color, i) => {
+      if (game.unlockedColors.includes(color)) {
+        ctx.fillStyle = color;
+        ctx.fillRect(15 + i * stripeWidth, 75, stripeWidth, 25);
+      }
+    });
+    
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText(game.unlockedColors.length + '/7 🌈', 170, 91);
+    
+    // Health bar
+    ctx.font = 'bold 16px Arial';
+    let healthText = '';
+    for (let i = 0; i < game.maxHealth; i++) {
+      healthText += i < game.health ? '❤️' : '🖤';
+    }
+    ctx.fillText(healthText, 245, 30);
+    
+    // Poop ammo indicator (5 spaces)
+    const poopX = 15;
+    const poopY = 110;
+    const poopBoxSize = 18;
+    const poopSpacing = 22;
+    
+    for (let i = 0; i < game.maxPoop; i++) {
+      // Draw box
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(poopX + i * poopSpacing, poopY, poopBoxSize, poopBoxSize);
+      
+      // Fill box if poop is available
+      if (i < game.poopAmmo) {
+        if (game.plugged) {
+          // Yellow when plugged
+          ctx.fillStyle = '#FFD700';
+        } else {
+          // Brown when normal
+          ctx.fillStyle = '#8B4513';
+        }
+        ctx.fillRect(poopX + i * poopSpacing + 2, poopY + 2, poopBoxSize - 4, poopBoxSize - 4);
+      } else {
+        // Empty - light gray
+        ctx.fillStyle = '#E0E0E0';
+        ctx.fillRect(poopX + i * poopSpacing + 2, poopY + 2, poopBoxSize - 4, poopBoxSize - 4);
+      }
+    }
+    
+    // Poop label
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText('💩 Ammo', poopX + 120, poopY + 14);
+    
+    // Gas indicator (if plugged)
+    if (game.plugged && game.tootsRemaining > 0) {
+      ctx.fillText('💨 ' + game.tootsRemaining + ' toots to clear', poopX, poopY + 35);
+    }
+    
+    // Swarm counter (how many flies on your butt!)
+    const swarmingCount = game.frontFlies.filter(f => f.state === 'swarming').length;
+    if (swarmingCount > 0) {
+      ctx.fillStyle = '#FF0000';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText('🪰 ' + swarmingCount + ' swarming your butt!', poopX, poopY + 55);
+    }
+    
+    const poopMeter = document.getElementById('poopMeter');
+    poopMeter.textContent = ''; // Clear text meter since we have visual now
+    
+    if (game.over) {
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillRect(0, 0, 360, 640);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 36px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', 180, 250);
+      ctx.font = '20px Arial';
+      ctx.fillText('Score: ' + game.score, 180, 300);
+      ctx.fillText('Level: ' + (game.level + 1), 180, 330);
+      ctx.fillText('Colors: ' + game.unlockedColors.length + '/7', 180, 360);
+      ctx.font = '16px Arial';
+      ctx.fillText('Tap to Restart', 180, 400);
+      ctx.textAlign = 'left';
+    }
+    
+    if (game.levelComplete && !game.over && game.unlockedColors.length > 0) {
+      // TECMO BOWL STYLE PORTRAIT CELEBRATION!
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 360, 640);
+      
+      const lastColor = game.unlockedColors[game.unlockedColors.length - 1];
+      const rainbow = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#8B00FF'];
+      const names = ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet'];
+      const idx = rainbow.indexOf(lastColor);
+      const colorName = names[idx];
+      
+      // PLAYER CARD BORDER (Tecmo Bowl style)
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(30, 80, 300, 280);
+      ctx.strokeStyle = lastColor;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(30, 80, 300, 280);
+      
+      // Inner border (white)
+      ctx.strokeStyle = '#FFF';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(38, 88, 284, 264);
+      
+      // DRAW UNICORN PORTRAIT (Tecmo Bowl style!)
+      const portraitX = 180;
+      const portraitY = 200;
+      
+      // Head (white circle)
+      ctx.fillStyle = '#FFF';
+      ctx.beginPath();
+      ctx.arc(portraitX, portraitY, 80, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      
+      // Horn (pink triangle on top)
+      ctx.fillStyle = '#FF1493';
+      ctx.beginPath();
+      ctx.moveTo(portraitX, portraitY - 80);
+      ctx.lineTo(portraitX - 20, portraitY - 40);
+      ctx.lineTo(portraitX + 20, portraitY - 40);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Horn spiral lines
+      ctx.strokeStyle = '#C71585';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(portraitX - 8, portraitY - 60);
+      ctx.lineTo(portraitX + 8, portraitY - 55);
+      ctx.moveTo(portraitX - 6, portraitY - 50);
+      ctx.lineTo(portraitX + 6, portraitY - 45);
+      ctx.stroke();
+      
+      // Eyes (big cute anime-style)
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(portraitX - 25, portraitY - 10, 12, 0, Math.PI * 2);
+      ctx.arc(portraitX + 25, portraitY - 10, 12, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Eye highlights
+      ctx.fillStyle = '#FFF';
+      ctx.beginPath();
+      ctx.arc(portraitX - 22, portraitY - 13, 5, 0, Math.PI * 2);
+      ctx.arc(portraitX + 28, portraitY - 13, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Nose (small pink circle)
+      ctx.fillStyle = '#FFB6C1';
+      ctx.beginPath();
+      ctx.arc(portraitX, portraitY + 15, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Smile
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(portraitX, portraitY + 20, 25, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+      
+      // RAINBOW MANE (layered on left side of head)
+      // Draw all unlocked colors as flowing mane stripes
+      const maneX = portraitX - 80;
+      const maneY = portraitY - 40;
+      
+      game.unlockedColors.forEach((color, i) => {
+        // Flowing wavy mane stripes
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        
+        // Three wavy strands per color
+        for (let strand = 0; strand < 3; strand++) {
+          ctx.beginPath();
+          const startY = maneY + (i * 12) + (strand * 4);
+          ctx.moveTo(maneX, startY);
+          ctx.quadraticCurveTo(
+            maneX - 30, startY + 15,
+            maneX - 25, startY + 40
+          );
+          ctx.stroke();
+        }
+      });
+      
+      // NEW color highlight (pulsing glow effect)
+      const pulseAlpha = 0.5 + Math.sin(Date.now() / 200) * 0.3;
+      ctx.shadowColor = lastColor;
+      ctx.shadowBlur = 30;
+      ctx.globalAlpha = pulseAlpha;
+      
+      const newColorIndex = game.unlockedColors.length - 1;
+      ctx.strokeStyle = lastColor;
+      ctx.lineWidth = 12;
+      for (let strand = 0; strand < 3; strand++) {
+        ctx.beginPath();
+        const startY = maneY + (newColorIndex * 12) + (strand * 4);
+        ctx.moveTo(maneX, startY);
+        ctx.quadraticCurveTo(
+          maneX - 30, startY + 15,
+          maneX - 25, startY + 40
+        );
+        ctx.stroke();
+      }
+      
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      
+      // Color name text (Tecmo Bowl style - in card)
+      ctx.fillStyle = '#FFF';
+      ctx.font = 'bold 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('NEW STRIPE!', 180, 345);
+      
+      // Big color name below card
+      ctx.fillStyle = lastColor;
+      ctx.font = 'bold 40px Arial';
+      ctx.shadowColor = lastColor;
+      ctx.shadowBlur = 20;
+      ctx.fillText(colorName.toUpperCase(), 180, 420);
+      ctx.shadowBlur = 0;
+      
+      ctx.fillStyle = '#FFF';
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText('✨ UNLOCKED ✨', 180, 460);
+      
+      // Progress counter
+      ctx.font = '18px Arial';
+      ctx.fillText(game.unlockedColors.length + ' / 7 Rainbow Colors', 180, 500);
+      
+      ctx.textAlign = 'left';
+    }
+  }
+  
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  
+  function jump() {
+    if (game.over) {
+      reset();
+      return;
+    }
+    
+    // Flappy bird style - each tap gives upward boost!
+    game.unicorn.vy = -14; // Set upward velocity
+    
+    // Cap maximum height (can't fly off screen)
+    if (game.unicorn.y < 50) {
+      game.unicorn.y = 50;
+    }
+  }
+  
+  function doubleJump() {
+    // If grounded, do initial jump first
+    if (game.unicorn.grounded) {
+      game.unicorn.vy = -16;
+      game.unicorn.grounded = false;
+      // Set a small delay then trigger double jump
+      setTimeout(function() {
+        if (game.unicorn.canDouble) {
+          game.unicorn.vy = -13;
+          game.unicorn.canDouble = false;
+        }
+      }, 50);
+    } 
+    // If already in air, do double jump
+    else if (game.unicorn.canDouble) {
+      game.unicorn.vy = -13;
+      game.unicorn.canDouble = false;
+    }
+  }
+  
+  function tryPoop() {
+    if (game.plugged) {
+      toot();
+      return;
+    }
+    
+    if (game.poopAmmo > 0) {
+      shootPoopBackward();
+      game.poopAmmo--;
+    }
+  }
+  
+  function shootPoopBackward() {
+    game.poops.push({ 
+      x: game.unicorn.x, 
+      y: game.unicorn.y + 25,
+      vx: -6,
+      vy: 4,
+      gas: false
+    });
+  }
+  
+  function toot() {
+    if (game.tootsRemaining > 0) {
+      game.tootsRemaining--;
+      
+      game.poops.push({
+        x: game.unicorn.x,
+        y: game.unicorn.y + 30,
+        vx: -2,
+        vy: 0,
+        gas: true
+      });
+      
+      if (game.tootsRemaining === 0) {
+        game.plugged = false;
+      }
+    }
+  }
+  
+  function hornBlast() {
+    const u = game.unicorn;
+    
+    // Find closest APPROACHING front fly (not swarming!)
+    let closestFly = null;
+    let closestDist = Infinity;
+    
+    game.frontFlies.forEach(f => {
+      if (f.state === 'approaching' && f.x > u.x - 50) { // Only approaching flies
+        const dist = Math.sqrt((f.x - u.x) ** 2 + (f.y - u.y) ** 2);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestFly = f;
+        }
+      }
+    });
+    
+    // Auto-aim at closest approaching fly if exists
+    if (closestFly) {
+      const flyX = closestFly.x + closestFly.w / 2;
+      const flyY = closestFly.y + closestFly.h / 2;
+      
+      // Calculate direction to fly
+      const dx = flyX - (u.x + u.w);
+      const dy = flyY - (u.y + u.h / 2);
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      // Normalize and set speed
+      const speed = 12;
+      const vx = (dx / dist) * speed;
+      const vy = (dy / dist) * speed;
+      
+      game.hornBlasts.push({
+        x: u.x + u.w,
+        y: u.y + u.h / 2,
+        vx: vx,
+        vy: vy
+      });
+    } else {
+      // No approaching fly? Just shoot forward!
+      game.hornBlasts.push({
+        x: u.x + u.w,
+        y: u.y + u.h / 2,
+        vx: 12,
+        vy: 0
+      });
+    }
+  }
+  
+  function spawnFlowers() {
+    // Flowers now spawn continuously during gameplay
+    // This function is no longer needed for batch spawning
+  }
+  
+  function unlockColor(color) {
+    if (!game.unlockedColors.includes(color)) {
+      game.unlockedColors.push(color);
+    }
+    
+    // Award star collection bonus! (10 points per star at level end)
+    if (game.starsCollected > 0) {
+      const starBonus = game.starsCollected * 10;
+      game.score += starBonus;
+      scoreEl.textContent = game.score;
+    }
+    
+    game.levelComplete = true;
+    
+    setTimeout(function() {
+      game.level++;
+      game.distance = 0;
+      game.ring = null;
+      game.levelComplete = false;
+      game.killsThisLevel = 0; // Reset kill counter for new level!
+      game.flowersPooped = 0; // Reset flower counter
+      game.essencesCollected = 0; // Reset essence counter
+      game.starsCollected = 0; // Reset star counter
+      game.stars = []; // Clear stars
+      game.butterfly = null; // Clear butterfly
+      game.rainbowTrail = null; // Clear rainbow trail
+      game.lastFlowerSpawn = Date.now() + 2000; // Reset flower spawn timer (2s)
+      game.lastStarSpawn = Date.now() + 5000; // Reset star spawn timer
+      
+      if (game.level >= game.levels.length) {
+        winGame();
+        return;
+      }
+      
+      game.showSplash = true;
+      game.splashStart = Date.now();
+    }, 2500); // Tecmo Bowl style - hold portrait for 2.5 seconds!
+  }
+  
+  function winGame() {
+    game.over = true;
+    
+    setTimeout(function() {
+      alert('🌈 YOU MADE A FULL RAINBOW UNICORN! 🌈');
+      reset();
+    }, 500);
+  }
+  
+  function reset() {
+    const savedColors = game.unlockedColors || [];
+    const savedLevel = game.level || 0;
+    const savedDifficulty = game.difficulty; // Keep difficulty across resets
+    
+    game.unicorn = { x: 80, y: 480, w: 50, h: 50, vy: 0, grounded: false, canDouble: true };
+    game.frontFlies = [];
+    game.rearFlies = [];
+    game.poops = [];
+    game.hornBlasts = [];
+    game.pits = [];
+    game.waterPools = [];
+    game.poopAmmo = 5;
+    game.maxPoop = 5;
+    game.plugged = false;
+    game.tootsRemaining = 0;
+    game.hay = [];
+    game.grain = [];
+    game.flowers = [];
+    game.flowersPooped = 0;
+    game.essences = [];
+    game.essencesCollected = 0;
+    game.stars = [];
+    game.starsCollected = 0;
+    game.butterfly = null;
+    game.rainbowTrail = null;
+    game.level = savedLevel;
+    game.unlockedColors = savedColors;
+    game.distance = 0;
+    game.ring = null;
+    game.levelComplete = false;
+    game.killsThisLevel = 0; // Reset kill counter!
+    game.showSplash = savedLevel === 0;
+    game.splashStart = savedLevel === 0 ? Date.now() : 0;
+    
+    // Apply difficulty-based settings
+    if (savedDifficulty) {
+      const diffConfig = DIFFICULTIES[savedDifficulty];
+      game.health = diffConfig.health;
+      game.maxHealth = diffConfig.health;
+      game.lastFrontFlySpawn = Date.now() + 4000; // Start with 4 seconds
+      game.lastRearFlySpawn = Date.now() + 5000;
+    } else {
+      game.health = 3;
+      game.maxHealth = 3;
+      game.lastFrontFlySpawn = Date.now() + 4000;
+      game.lastRearFlySpawn = Date.now() + 5000;
+    }
+    
+    game.invincible = false;
+    game.invincibleUntil = 0;
+    game.bg = 0;
+    game.score = 0;
+    game.over = false;
+    game.lastPitSpawn = Date.now() + 6000;
+    game.lastWaterSpawn = Date.now() + 8000;
+    game.lastHaySpawn = Date.now() + 4000;
+    game.lastGrainSpawn = Date.now() + 10000;
+    game.lastFlowerSpawn = Date.now() + 2000; // Flowers every 2 seconds!
+    game.lastStarSpawn = Date.now() + 5000;
+    game.speedMultiplier = 1;
+    game.baseSpeed = 3;
+    game.touchY = 0;
+    game.touchX = 0;
+    game.lastTapTime = 0;
+    game.lastSpaceTime = 0;
+    
+    scoreEl.textContent = '0';
+  }
+  
+  function selectDifficulty(difficulty) {
+    game.difficulty = difficulty;
+    game.showDifficultySelect = false;
+    
+    // Set health based on difficulty
+    const diffConfig = DIFFICULTIES[difficulty];
+    game.health = diffConfig.health;
+    game.maxHealth = diffConfig.health;
+    
+    // Update spawn rates - start with 4 seconds
+    game.lastFrontFlySpawn = Date.now() + 4000;
+    game.lastRearFlySpawn = Date.now() + 5000;
+  }
+  
+  // Difficulty selection click handler
+  canvas.addEventListener('click', function(e) {
+    if (game.showDifficultySelect) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Scale for canvas size
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const canvasX = x * scaleX;
+      const canvasY = y * scaleY;
+      
+      // Check button clicks
+      if (canvasX >= 60 && canvasX <= 300) {
+        if (canvasY >= 200 && canvasY <= 260) {
+          selectDifficulty('easy');
+        } else if (canvasY >= 290 && canvasY <= 350) {
+          selectDifficulty('medium');
+        } else if (canvasY >= 380 && canvasY <= 440) {
+          selectDifficulty('hard');
+        }
+      }
+    }
+  });
+  
+  document.getElementById('jump').onclick = jump;
+  document.getElementById('double').onclick = doubleJump;
+  document.getElementById('poop').onclick = tryPoop;
+  document.getElementById('horn').onclick = hornBlast;
+  
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    game.touchY = e.touches[0].clientY;
+    game.touchX = e.touches[0].clientX;
+  });
+  
+  canvas.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - game.touchX;
+    const dy = endY - game.touchY;
+    
+    const isVertical = Math.abs(dy) > Math.abs(dx);
+    const isHorizontal = Math.abs(dx) > Math.abs(dy);
+    
+    // Swipe UP = Big boost
+    if (dy < -40 && isVertical) {
+      doubleJump();
+      game.lastTapTime = 0; // Reset tap timer
+    }
+    // Swipe LEFT = Poop at rear fly
+    else if (dx < -30 && isHorizontal) {
+      tryPoop();
+      game.lastTapTime = 0;
+    }
+    // Swipe RIGHT = Horn blast at front fly
+    else if (dx > 30 && isHorizontal) {
+      hornBlast();
+      game.lastTapTime = 0;
+    }
+    // TAP = Flappy Bird flying!
+    else if (Math.abs(dx) < 30 && Math.abs(dy) < 30) {
+      const now = Date.now();
+      if (now - game.lastTapTime < 300) {
+        // DOUBLE-TAP = Big boost
+        doubleJump();
+        game.lastTapTime = 0; // Reset to prevent triple-tap
+      } else {
+        // SINGLE TAP = Fly (tap repeatedly to stay airborne!)
+        jump();
+        game.lastTapTime = now;
+      }
+    }
+  });
+  
+  canvas.onclick = jump;
+  
+  document.addEventListener('keydown', function(e) {
+    // Space bar = tap to fly (Flappy Bird style!)
+    if (e.code === 'Space') {
+      e.preventDefault();
+      jump(); // Each press gives upward boost!
+    }
+    if (e.code === 'ArrowUp') { e.preventDefault(); doubleJump(); }
+    if (e.code === 'ArrowDown' || e.code === 'ArrowLeft') { e.preventDefault(); tryPoop(); }
+    if (e.code === 'ArrowRight') { e.preventDefault(); hornBlast(); }
+  });
+  
+  // Flowers spawn continuously during gameplay
+  
+  loop();
+  
+} catch(err) {
+  console.error('Game Error:', err);
+  alert('Error loading game: ' + err.message);
+}
+</script>
+
+</body>
+</html>

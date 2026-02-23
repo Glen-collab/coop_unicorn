@@ -1039,7 +1039,12 @@ class AudioManager {
     this.ctx = null;
     this.masterGain = null;
     this.sfxGain = null;
+    this.musicGain = null;
     this.initialized = false;
+    this.buffers = {};       // name → AudioBuffer cache
+    this._currentMusic = null; // { source, gain, name }
+    this._musicFading = null;  // outgoing track during crossfade
+    this._preloaded = false;
   }
   init() {
     if (this.initialized) return;
@@ -1051,10 +1056,107 @@ class AudioManager {
       this.sfxGain = this.ctx.createGain();
       this.sfxGain.gain.value = 0.6;
       this.sfxGain.connect(this.masterGain);
+      this.musicGain = this.ctx.createGain();
+      this.musicGain.gain.value = 0.35;
+      this.musicGain.connect(this.masterGain);
       this.initialized = true;
+      this.preloadAll();
     } catch(e) { console.warn("WebAudio unavailable:", e); }
   }
-  // Play an oscillator-based SFX
+  preloadAll() {
+    if (this._preloaded) return;
+    this._preloaded = true;
+    const files = [
+      "jump.wav","triple_jump.wav","star_collect.wav","hoop_clear.wav",
+      "shrink.wav","shrink_2.wav","shrink_3.wav",
+      "poop.wav","poop_2.wav","grow_big.wav","extra_life.wav",
+      "death.wav","fall_death.wav","flower_bloom.wav","rainbow_shot.wav",
+      "level_complete.wav","title_screen.wav",
+      "game_complete.mp3","music_boss.mp3","music_boss_alt.mp3",
+      "music_world1.mp3","music_world2.mp3","music_world2_alt.mp3",
+      "music_world3.mp3","music_world4.mp3","music_world5.mp3",
+      "music_world6.mp3","music_world6_alt.mp3",
+      "music_world7.mp3","music_world8.mp3","music_world8_alt.mp3"
+    ];
+    for (const f of files) {
+      const name = f.replace(/\.(wav|mp3)$/, "");
+      fetch("sounds/" + f).then(r => r.arrayBuffer()).then(buf => {
+        return this.ctx.decodeAudioData(buf);
+      }).then(decoded => {
+        this.buffers[name] = decoded;
+      }).catch(() => {});
+    }
+  }
+  playSample(name, vol) {
+    if (!this.initialized || !this.buffers[name]) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.buffers[name];
+    const gain = this.ctx.createGain();
+    gain.gain.value = vol !== undefined ? vol : 1.0;
+    src.connect(gain);
+    gain.connect(this.sfxGain);
+    src.start(0);
+  }
+  playMusic(name, loop) {
+    if (!this.initialized) return;
+    // No-op if same track already playing
+    if (this._currentMusic && this._currentMusic.name === name) return;
+    // If buffer not loaded yet, defer
+    if (!this.buffers[name]) {
+      this._pendingMusic = { name: name, loop: !!loop };
+      return;
+    }
+    // Crossfade out old track
+    if (this._currentMusic) {
+      const old = this._currentMusic;
+      old.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+      setTimeout(() => { try { old.source.stop(); } catch(e){} }, 600);
+      this._currentMusic = null;
+    }
+    // Start new track
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.buffers[name];
+    src.loop = !!loop;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(1.0, this.ctx.currentTime + 0.5);
+    src.connect(gain);
+    gain.connect(this.musicGain);
+    src.start(0);
+    this._currentMusic = { source: src, gain: gain, name: name };
+    this._pendingMusic = null;
+  }
+  stopMusic(fadeTime) {
+    if (!this._currentMusic) return;
+    const fade = fadeTime !== undefined ? fadeTime : 0.5;
+    const old = this._currentMusic;
+    old.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + fade);
+    setTimeout(() => { try { old.source.stop(); } catch(e){} }, (fade + 0.1) * 1000);
+    this._currentMusic = null;
+  }
+  checkPendingMusic() {
+    if (this._pendingMusic && this.buffers[this._pendingMusic.name]) {
+      this.playMusic(this._pendingMusic.name, this._pendingMusic.loop);
+    }
+  }
+  getMusicForLevel(def) {
+    if (def.isBoss) {
+      // Alternate boss music for worlds 5+
+      return def.world >= 5 ? "music_boss_alt" : "music_boss";
+    }
+    switch (def.world) {
+      case 1: return "music_world1";
+      case 2: return def.level >= 3 ? "music_world2_alt" : "music_world2";
+      case 3: return "music_world3";
+      case 4: return "music_world4";
+      case 5: return "music_world5";
+      case 6: return def.level >= 3 ? "music_world6_alt" : "music_world6";
+      case 7: return "music_world7";
+      case 8: return def.level >= 3 ? "music_world8_alt" : "music_world8";
+      default: return "music_world1";
+    }
+  }
+  // Play an oscillator-based SFX (fallback / subtle sounds)
   playSFX(type, freq, duration, freqEnd, vol) {
     if (!this.initialized) return;
     const ctx = this.ctx;
@@ -1070,21 +1172,92 @@ class AudioManager {
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + duration);
   }
-  jumpSound() { this.playSFX("square", 300, 0.15, 600, 0.25); }
-  doubleJumpSound() { this.playSFX("square", 400, 0.18, 800, 0.2); }
+  // --- SFX methods (WAV-first + oscillator fallback) ---
+  jumpSound() {
+    if (this.buffers["jump"]) { this.playSample("jump", 0.7); }
+    else { this.playSFX("square", 300, 0.15, 600, 0.25); }
+  }
+  doubleJumpSound() {
+    if (this.buffers["triple_jump"]) { this.playSample("triple_jump", 0.7); }
+    else { this.playSFX("square", 400, 0.18, 800, 0.2); }
+  }
   collectSound() {
-    this.playSFX("sine", 800, 0.08, 1200, 0.3);
-    setTimeout(() => this.playSFX("sine", 1200, 0.12, 1600, 0.25), 80);
+    if (this.buffers["star_collect"]) { this.playSample("star_collect", 0.8); }
+    else {
+      this.playSFX("sine", 800, 0.08, 1200, 0.3);
+      setTimeout(() => this.playSFX("sine", 1200, 0.12, 1600, 0.25), 80);
+    }
+  }
+  hurtSound() {
+    if (this.buffers["shrink"]) {
+      const picks = ["shrink","shrink_2","shrink_3"].filter(n => this.buffers[n]);
+      if (picks.length > 0) { this.playSample(picks[Math.floor(Math.random() * picks.length)], 0.8); return; }
+    }
+    this.playSFX("sawtooth", 200, 0.3, 80, 0.3);
+  }
+  hoopSound() {
+    if (this.buffers["hoop_clear"]) { this.playSample("hoop_clear", 0.9); }
+    else {
+      this.playSFX("sine", 523, 0.12, 523, 0.3);
+      setTimeout(() => this.playSFX("sine", 659, 0.12, 659, 0.3), 120);
+      setTimeout(() => this.playSFX("sine", 784, 0.12, 784, 0.3), 240);
+      setTimeout(() => this.playSFX("sine", 1047, 0.25, 1047, 0.35), 360);
+    }
   }
   landSound() { this.playSFX("triangle", 100, 0.1, 60, 0.15); }
-  hurtSound() { this.playSFX("sawtooth", 200, 0.3, 80, 0.3); }
-  hoopSound() {
-    this.playSFX("sine", 523, 0.12, 523, 0.3);
-    setTimeout(() => this.playSFX("sine", 659, 0.12, 659, 0.3), 120);
-    setTimeout(() => this.playSFX("sine", 784, 0.12, 784, 0.3), 240);
-    setTimeout(() => this.playSFX("sine", 1047, 0.25, 1047, 0.35), 360);
-  }
   menuSelect() { this.playSFX("square", 600, 0.08, 900, 0.2); }
+  // --- New SFX methods ---
+  poopSound() { this.playSample("poop", 0.7); }
+  growBigSound() { this.playSample("grow_big", 0.9); }
+  extraLifeSound() { this.playSample("extra_life", 1.0); }
+  deathSound() { this.playSample("death", 0.9); }
+  fallDeathSound() { this.playSample("fall_death", 0.9); }
+  flowerBloomSound() { this.playSample("flower_bloom", 0.8); }
+  rainbowShotSound() { this.playSample("rainbow_shot", 0.7); }
+  levelCompleteSound() { this.playSample("level_complete", 1.0); }
+  // --- Per-form poop sounds (synthesized) ---
+  mermaidPoopSound() {
+    if (!this.initialized) return;
+    // Bubbly underwater — 4 staggered sine pops
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        this.playSFX("sine", 400 + Math.random() * 200, 0.08, 200 + Math.random() * 100, 0.2);
+      }, i * 60);
+    }
+  }
+  kittycornPoopSound() {
+    if (!this.initialized) return;
+    // Cute squeaky — 3 high triangle chirps
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        this.playSFX("triangle", 1200 + i * 200, 0.06, 1800 + i * 200, 0.2);
+      }, i * 70);
+    }
+  }
+  pixicornPoopSound() {
+    if (!this.initialized) return;
+    // Sparkly arpeggio — 5 ascending sine notes
+    const notes = [523, 659, 784, 988, 1175];
+    for (let i = 0; i < notes.length; i++) {
+      setTimeout(() => {
+        this.playSFX("sine", notes[i], 0.1, notes[i] * 1.05, 0.2);
+      }, i * 50);
+    }
+  }
+  mousicornPoopSound() {
+    if (!this.initialized) return;
+    // Tiny squeak — 2 very high square chirps
+    this.playSFX("square", 2400, 0.04, 3200, 0.15);
+    setTimeout(() => this.playSFX("square", 2800, 0.05, 3600, 0.15), 60);
+  }
+  // Form-aware poop dispatcher
+  formPoopSound(player) {
+    if (player.isMermaid) { this.mermaidPoopSound(); }
+    else if (player.isKittycorn) { this.kittycornPoopSound(); }
+    else if (player.isPixicorn) { this.pixicornPoopSound(); }
+    else if (player.isMouseicorn) { this.mousicornPoopSound(); }
+    else { this.poopSound(); }
+  }
 }
 
 // --- Camera ---
@@ -1353,6 +1526,7 @@ class Player extends Entity {
     this.isMouseicorn = false;
     this.mousicornTransformTimer = 0;
     this.isUnderwater = false;  // set by level — modifies physics
+    this._deathType = null;     // "fall" or "contact" — for death sound selection
   }
   collectWings(audio, particles) {
     this.hasWings = true;
@@ -1748,6 +1922,7 @@ class Player extends Entity {
     // Death by falling off level
     if (this.y > level.height + 40) {
       this.lives--;
+      this._deathType = "fall";
       this.die();
     }
   }
@@ -1851,6 +2026,7 @@ class Player extends Entity {
     } else {
       // Tier 3: Small + hit = death
       this.lives--;
+      this._deathType = "contact";
       this.die();
     }
   }
@@ -1895,6 +2071,7 @@ class Player extends Entity {
     this.mermaidTransformTimer = 0;
     this.pixicornTransformTimer = 0;
     this.mousicornTransformTimer = 0;
+    this._deathType = null;
   }
 }
 
@@ -9088,8 +9265,54 @@ class GameStateMachine {
     this.deathTimer = 0;
   }
   setState(s) {
+    const prev = this.state;
     this.state = s;
     this.stateTimer = 0;
+    this.onStateEnter(s, prev);
+  }
+  onStateEnter(state, prev) {
+    const g = this.game;
+    const audio = g.audio;
+    switch (state) {
+      case STATE_TITLE:
+        audio.stopMusic(0.8);
+        audio.playMusic("title_screen", true);
+        break;
+      case STATE_LEVEL_INTRO: {
+        const def = LEVEL_DEFS[g.currentLevelIndex];
+        const track = audio.getMusicForLevel(def);
+        audio.playMusic(track, true);
+        break;
+      }
+      case STATE_PLAYING:
+        // Restart level music when respawning from death
+        if (prev === STATE_DYING) {
+          const def = LEVEL_DEFS[g.currentLevelIndex];
+          const track = audio.getMusicForLevel(def);
+          audio.playMusic(track, true);
+        }
+        break;
+      case STATE_DYING:
+        audio.stopMusic(0.3);
+        if (g.player._deathType === "fall") {
+          audio.fallDeathSound();
+        } else {
+          audio.deathSound();
+        }
+        break;
+      case STATE_COMPLETE: {
+        audio.stopMusic(0.5);
+        const nextIdx = g.currentLevelIndex + 1;
+        const isGameComplete = nextIdx >= LEVEL_DEFS.length;
+        setTimeout(() => {
+          audio.levelCompleteSound();
+          if (isGameComplete) {
+            setTimeout(() => audio.playMusic("game_complete", false), 1500);
+          }
+        }, 500);
+        break;
+      }
+    }
   }
   update(dt) {
     this.stateTimer += dt;
@@ -9283,6 +9506,7 @@ class GameStateMachine {
       if (g.levelTimer <= 0) {
         g.levelTimer = 0;
         g.player.lives--;
+        g.player._deathType = "contact";
         g.player.die();
         g.particles.floatingText(g.player.cx, g.player.cy - 20, "TIME UP!", "#ff4444");
       }
@@ -9441,6 +9665,7 @@ class GameStateMachine {
       const poop = new Poop(spawnX, spawnY, 0, 0);
       poop.fadeTime = 8.0;
       g.level.poops.push(poop);
+      g.audio.formPoopSound(g.player);
     }
 
     // Spawn poop if player flagged it
@@ -9453,7 +9678,7 @@ class GameStateMachine {
       const spawnY = g.player.bottom - 14;
       const poop = new Poop(spawnX, spawnY, pvx, pvy);
       g.level.poops.push(poop);
-      g.audio.collectSound();
+      g.audio.formPoopSound(g.player);
       g.particles.emit(PARTICLE_DUST, spawnX, spawnY, {
         vx: -g.player.facing * 0.8, vy: -1, life: 0.3, size: 3, color: "#cc88ff", gravity: 0.02, friction: 0.9
       });
@@ -9481,7 +9706,7 @@ class GameStateMachine {
       const hornY = g.player.top + hornOffsetY;
       const bolt = new RainbowBolt(hornX, hornY, g.player.facing);
       g.level.rainbowBolts.push(bolt);
-      g.audio.playSFX("sine", 600, 0.15, 1200, 0.2);
+      g.audio.rainbowShotSound();
       g.particles.sparkleBurst(hornX, hornY, 5);
     }
 
@@ -9950,7 +10175,7 @@ class GameStateMachine {
           poop.alive = false;
           g.player.flowersRevived++;
           g.player.flowersForRainbow++;
-          g.audio.collectSound();
+          g.audio.flowerBloomSound();
           g.particles.sparkleBurst(df.cx, df.cy, 10);
           g.particles.floatingText(df.cx, df.cy - 12, "BLOOM!", "#ff88cc");
           // Check for rainbow power
@@ -9964,6 +10189,7 @@ class GameStateMachine {
             g.player.lives++;
             g.player.flowersRevived = 0;
             g.player.flowersForRainbow = 0;
+            g.audio.extraLifeSound();
             g.particles.sparkleBurst(g.player.cx, g.player.cy, 30);
             g.particles.floatingText(g.player.cx, g.player.cy - 20, "1UP!", "#44ff44");
           }
@@ -9980,10 +10206,11 @@ class GameStateMachine {
         if (poop.overlaps(bf)) {
           bf.used = true;
           poop.alive = false;
-          g.audio.collectSound();
+          g.audio.flowerBloomSound();
           if (g.player.isBig) {
             // Already big — free life with rainbow effect!
             g.player.lives++;
+            g.audio.extraLifeSound();
             g.particles.sparkleBurst(bf.cx, bf.cy, 20);
             g.particles.floatingText(bf.cx, bf.cy - 12, "1UP!", "#00ff88");
             // Rainbow burst
@@ -10009,13 +10236,13 @@ class GameStateMachine {
         hb.alive = false;
         if (!g.player.isBig) {
           g.player.isBig = true;
-          g.audio.collectSound();
+          g.audio.growBigSound();
           g.particles.sparkleBurst(g.player.cx, g.player.cy, 15);
           g.particles.floatingText(g.player.cx, g.player.cy - 20, "BIG!", "#daa520");
         } else {
           // Already big — 1-UP!
           g.player.lives++;
-          g.audio.collectSound();
+          g.audio.extraLifeSound();
           g.particles.sparkleBurst(g.player.cx, g.player.cy, 20);
           g.particles.floatingText(g.player.cx, g.player.cy - 20, "1UP!", "#00ff88");
           const colors = ["#ff0000","#ff8800","#ffff00","#00ff00","#0088ff","#8800ff"];
@@ -10263,7 +10490,16 @@ class Game {
     if (!this.audio.initialized) {
       if (Object.keys(this.input.keys).length > 0 || this.input.anyGamepadPressed) {
         this.audio.init();
+        // Start title music if on title screen
+        if (this.sm.state === STATE_TITLE) {
+          this.audio.playMusic("title_screen", true);
+        }
       }
+    }
+
+    // Check for deferred music that finished loading
+    if (this.audio.initialized) {
+      this.audio.checkPendingMusic();
     }
 
     this.input.update();

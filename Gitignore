@@ -7,7 +7,7 @@ Thumbs.db
 *.bak
 ~*.*
 
-# Node.js / build tools (if you ever add them)
+# Node.js / build tools
 node_modules/
 dist/
 build/
@@ -15,3 +15,20 @@ build/
 # IDEs
 .vscode/
 .idea/
+
+# Dev-only files (not needed at runtime)
+*.mov
+*.MP4
+*.mp4
+*.gif
+*.zip
+frames_*/
+sprites/raw_frames/
+sprites/__pycache__/
+sprites/build_spritesheet.py
+sprites/*_frames/
+_validate.js
+unicorn_nextgen.html
+idle_with_wings.png
+PROGRESS.md
+WORLD_BUILDING.md

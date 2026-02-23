@@ -10491,7 +10491,7 @@ class Game {
       if (Object.keys(this.input.keys).length > 0 || this.input.anyGamepadPressed) {
         this.audio.init();
         // Start title music if on title screen
-        if (this.sm.state === STATE_TITLE) {
+        if (this.stateMachine.state === STATE_TITLE) {
           this.audio.playMusic("title_screen", true);
         }
       }

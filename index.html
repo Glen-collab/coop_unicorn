@@ -1297,9 +1297,9 @@ class AudioManager {
     }
   }
   celebrateSound(player) {
-    if (player.isMermaid) { if (!this._sfx("celebrateMermaid")) this.levelCompleteSound(); }
-    else if (player.isKittycorn) { if (!this._sfx("celebrateKittycorn")) this.levelCompleteSound(); }
-    else if (player.isPixicorn) { if (!this._sfx("celebratePixicorn")) this.levelCompleteSound(); }
+    if (player.isMermaid) { this._sfx("celebrateMermaid"); }
+    else if (player.isKittycorn) { this._sfx("celebrateKittycorn"); }
+    else if (player.isPixicorn) { this._sfx("celebratePixicorn"); }
     else if (player.isMouseicorn) {
       // Triple squeak! Play 3 back-to-back
       this._sfx("celebrateMouseicorn");

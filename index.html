@@ -169,6 +169,7 @@ const CFG = {
   BOSS_LEVEL_TIME: 400,    // boss level countdown
   TIME_TICK_SPEED: 2,      // ticks per real second (300 = 150 real seconds)
   TIME_WARNING: 100,       // flash red below this
+  TIME_COUNTDOWN_SFX: 40,  // play countdown sound at this tick (40 ticks / 2 = 20 real sec)
 
   // Invincibility
   INV_TIME: 2.0,
@@ -251,6 +252,11 @@ const CFG = {
   SPRITE_MOUSICORN_FH: 128,
   MOUSICORN_TRANSFORM_DURATION: 0.8,
   MOUSICORN_SPEED: 2.8,
+
+  // Grow/shrink freeze durations
+  GROW_BIG_DURATION: 0.5,
+  SHRINK_DURATION: 0.4,
+  LOSE_FORM_DURATION: 0.5,
 
   // Rat boss
   RAT_CHARGE_SPEED_MULT: 3.0,
@@ -1033,6 +1039,57 @@ class InputManager {
   get shoot() { return this.pressed("KeyF") || this.pressed("ShiftLeft"); }
 }
 
+// --- SFX Lookup Table (swap any sound by changing the file value) ---
+const SFX_MAP = {
+  jump:          { file: "jump",           vol: 0.7 },
+  doubleJump:    { file: "triple_jump",    vol: 0.7 },
+  collect:       { file: "star_collect",   vol: 0.8 },
+  hoop:          { file: "hoop_clear",     vol: 0.9 },
+  rainbowShot:   { file: "rainbow_shot (2)", vol: 0.7 },
+  growBig:       { file: "grow_big",       vol: 0.9 },
+  flowerBloom:   { file: "flower_bloom",   vol: 0.8 },
+  extraLife:     { file: "extra_life",     vol: 1.0 },
+  loseForm:      { file: "form_shrink_sound", vol: 0.8 },
+  shrink:        { file: "shrink_2",       vol: 0.8 },
+  hurtGeneric:   { file: "shrink_3",       vol: 0.8 },
+  death:         { file: "death_to_character", vol: 0.9 },
+  fallDeath:     { file: "mixkit-player-losing-or-failing-2042", vol: 0.9 },
+  timerCountdown:{ file: "timer_countdown",   vol: 0.8 },
+
+  // --- Poop sound variants (2-3 random per form) ---
+  // Default unicorn poop
+  poop1:           { file: "poop",                              vol: 0.7 },
+  poop2:           { file: "poop_2",                            vol: 0.7 },
+  poop3:           { file: "mixkit-cartoon-strong-fart-3050",   vol: 0.7 },
+  // Mermaid poop (wet / bubbly farts)
+  mermaidPoop1:    { file: "mixkit-wet-accident-fart-3041",     vol: 0.7 },
+  mermaidPoop2:    { file: "mixkit-farting-balloon-deflate-3052", vol: 0.7 },
+  mermaidPoop3:    { file: "mixkit-cartoon-fail-blow-fart-3053", vol: 0.7 },
+  // Kittycorn poop (quick / splatty)
+  kittycornPoop1:  { file: "mixkit-cartoon-quick-splat-2890",   vol: 0.7 },
+  kittycornPoop2:  { file: "mixkit-funny-cartoon-fast-splat-2889", vol: 0.7 },
+  kittycornPoop3:  { file: "mixkit-cartoon-fart-sound-2891",    vol: 0.7 },
+  // Pixicorn poop (dramatic / triple)
+  pixicornPoop1:   { file: "mixkit-cartoon-fart-triple-3055",   vol: 0.7 },
+  pixicornPoop2:   { file: "mixkit-farting-doubt-male-laugh-3054", vol: 0.7 },
+  // Mousicorn poop (quick squeaky farts)
+  mousicornPoop1:  { file: "mixkit-cartoon-fart-sound-2891",    vol: 0.7 },
+  mousicornPoop2:  { file: "mixkit-cartoon-quick-splat-2890",   vol: 0.7 },
+
+  // --- Level-complete celebration sounds (per form) ---
+  celebrateUnicorn:   { file: "level_complete",       vol: 1.0 },
+  celebrateMermaid:   { file: "mericorn_endlevel",     vol: 1.0 },
+  celebrateKittycorn: { file: "kitticorn_meow",       vol: 1.0 },
+  celebratePixicorn:  { file: "pixicorn_sound",       vol: 1.0 },
+  celebrateMouseicorn:{ file: "mousicorn_squeak",     vol: 1.0 },
+
+  // --- Boss sounds ---
+  fireBoss:       { file: "fire_boss",         vol: 0.8 },
+  dragonBoss:     { file: "dragon_boss",       vol: 0.9 },
+  catPharaohRoar: { file: "cat_pharoah_roar",  vol: 0.9 },
+  angryBoss:      { file: "angry_boss",        vol: 0.9 },
+};
+
 // --- Audio Manager (WebAudio API) ---
 class AudioManager {
   constructor() {
@@ -1045,6 +1102,7 @@ class AudioManager {
     this._currentMusic = null; // { source, gain, name }
     this._musicFading = null;  // outgoing track during crossfade
     this._preloaded = false;
+    this._countdownSource = null; // active countdown sound node
   }
   init() {
     if (this.initialized) return;
@@ -1066,18 +1124,17 @@ class AudioManager {
   preloadAll() {
     if (this._preloaded) return;
     this._preloaded = true;
-    const files = [
-      "jump.wav","triple_jump.wav","star_collect.wav","hoop_clear.wav",
-      "shrink.wav","shrink_2.wav","shrink_3.wav",
-      "poop.wav","poop_2.wav","grow_big.wav","extra_life.wav",
-      "death.wav","fall_death.wav","flower_bloom.wav","rainbow_shot.wav",
-      "level_complete.wav","title_screen.wav",
+    // Build WAV list from SFX_MAP + extras not in map
+    const sfxFiles = Object.values(SFX_MAP).map(s => s.file + ".wav");
+    const extraWavs = ["title_screen.wav"];
+    const musicFiles = [
       "game_complete.mp3","music_boss.mp3","music_boss_alt.mp3",
       "music_world1.mp3","music_world2.mp3","music_world2_alt.mp3",
       "music_world3.mp3","music_world4.mp3","music_world5.mp3",
       "music_world6.mp3","music_world6_alt.mp3",
       "music_world7.mp3","music_world8.mp3","music_world8_alt.mp3"
     ];
+    const files = [...new Set(sfxFiles)].concat(extraWavs, musicFiles);
     for (const f of files) {
       const name = f.replace(/\.(wav|mp3)$/, "");
       fetch("sounds/" + f).then(r => r.arrayBuffer()).then(buf => {
@@ -1096,6 +1153,23 @@ class AudioManager {
     src.connect(gain);
     gain.connect(this.sfxGain);
     src.start(0);
+  }
+  _sfx(key) {
+    const s = SFX_MAP[key];
+    if (s && this.buffers[s.file]) { this.playSample(s.file, s.vol); return true; }
+    return false;
+  }
+  _sfxRandom(prefix, count) {
+    // Pick randomly from loaded variants only
+    const available = [];
+    for (let i = 1; i <= count; i++) {
+      const s = SFX_MAP[prefix + i];
+      if (s && this.buffers[s.file]) available.push(s);
+    }
+    if (available.length === 0) return false;
+    const pick = available[Math.floor(Math.random() * available.length)];
+    this.playSample(pick.file, pick.vol);
+    return true;
   }
   playMusic(name, loop) {
     if (!this.initialized) return;
@@ -1172,40 +1246,20 @@ class AudioManager {
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + duration);
   }
-  // --- SFX methods (WAV-first + oscillator fallback) ---
-  jumpSound() {
-    if (this.buffers["jump"]) { this.playSample("jump", 0.7); }
-    else { this.playSFX("square", 300, 0.15, 600, 0.25); }
-  }
-  doubleJumpSound() {
-    if (this.buffers["triple_jump"]) { this.playSample("triple_jump", 0.7); }
-    else { this.playSFX("square", 400, 0.18, 800, 0.2); }
-  }
+  // --- SFX methods (WAV via SFX_MAP + oscillator fallback) ---
+  jumpSound() { if (!this._sfx("jump")) this.playSFX("square", 300, 0.15, 600, 0.25); }
+  doubleJumpSound() { if (!this._sfx("doubleJump")) this.playSFX("square", 400, 0.18, 800, 0.2); }
   collectSound() {
-    if (this.buffers["star_collect"]) { this.playSample("star_collect", 0.8); }
-    else {
+    if (!this._sfx("collect")) {
       this.playSFX("sine", 800, 0.08, 1200, 0.3);
       setTimeout(() => this.playSFX("sine", 1200, 0.12, 1600, 0.25), 80);
     }
   }
-  // Tier 1: Lose form (mermaid/kittycorn/pixicorn/mousicorn → big)
-  loseFormSound() {
-    if (this.buffers["shrink"]) { this.playSample("shrink", 0.8); }
-    else { this.playSFX("sawtooth", 300, 0.25, 120, 0.3); }
-  }
-  // Tier 2: Shrink (big → small)
-  shrinkSound() {
-    if (this.buffers["shrink_2"]) { this.playSample("shrink_2", 0.8); }
-    else { this.playSFX("sawtooth", 200, 0.3, 80, 0.3); }
-  }
-  // Generic hurt (boss hits, invalid code, etc.)
-  hurtSound() {
-    if (this.buffers["shrink_3"]) { this.playSample("shrink_3", 0.8); }
-    else { this.playSFX("sawtooth", 200, 0.3, 80, 0.3); }
-  }
+  loseFormSound() { if (!this._sfx("loseForm")) this.playSFX("sawtooth", 300, 0.25, 120, 0.3); }
+  shrinkSound() { if (!this._sfx("shrink")) this.playSFX("sawtooth", 200, 0.3, 80, 0.3); }
+  hurtSound() { if (!this._sfx("hurtGeneric")) this.playSFX("sawtooth", 200, 0.3, 80, 0.3); }
   hoopSound() {
-    if (this.buffers["hoop_clear"]) { this.playSample("hoop_clear", 0.9); }
-    else {
+    if (!this._sfx("hoop")) {
       this.playSFX("sine", 523, 0.12, 523, 0.3);
       setTimeout(() => this.playSFX("sine", 659, 0.12, 659, 0.3), 120);
       setTimeout(() => this.playSFX("sine", 784, 0.12, 784, 0.3), 240);
@@ -1214,15 +1268,65 @@ class AudioManager {
   }
   landSound() { this.playSFX("triangle", 100, 0.1, 60, 0.15); }
   menuSelect() { this.playSFX("square", 600, 0.08, 900, 0.2); }
-  // --- New SFX methods ---
-  poopSound() { this.playSample("poop", 0.7); }
-  growBigSound() { this.playSample("grow_big", 0.9); }
-  extraLifeSound() { this.playSample("extra_life", 1.0); }
-  deathSound() { this.playSample("death", 0.9); }
-  fallDeathSound() { this.playSample("fall_death", 0.9); }
-  flowerBloomSound() { this.playSample("flower_bloom", 0.8); }
-  rainbowShotSound() { this.playSample("rainbow_shot", 0.7); }
-  levelCompleteSound() { this.playSample("level_complete", 1.0); }
+  poopSound() { this._sfxRandom("poop", 3); }
+  growBigSound() { this._sfx("growBig"); }
+  extraLifeSound() { this._sfx("extraLife"); }
+  deathSound() { this._sfx("death"); }
+  fallDeathSound() { this._sfx("fallDeath"); }
+  flowerBloomSound() { this._sfx("flowerBloom"); }
+  rainbowShotSound() { this._sfx("rainbowShot"); }
+  levelCompleteSound() { this._sfx("celebrateUnicorn"); }
+  playCountdown() {
+    if (!this.initialized) return;
+    const s = SFX_MAP.timerCountdown;
+    if (!s || !this.buffers[s.file]) return;
+    this.stopCountdown();
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.buffers[s.file];
+    const gain = this.ctx.createGain();
+    gain.gain.value = s.vol;
+    src.connect(gain);
+    gain.connect(this.sfxGain);
+    src.start(0, 0, 20); // play first 20s of 24s file
+    this._countdownSource = src;
+  }
+  stopCountdown() {
+    if (this._countdownSource) {
+      try { this._countdownSource.stop(); } catch(e) {}
+      this._countdownSource = null;
+    }
+  }
+  celebrateSound(player) {
+    if (player.isMermaid) { if (!this._sfx("celebrateMermaid")) this.levelCompleteSound(); }
+    else if (player.isKittycorn) { if (!this._sfx("celebrateKittycorn")) this.levelCompleteSound(); }
+    else if (player.isPixicorn) { if (!this._sfx("celebratePixicorn")) this.levelCompleteSound(); }
+    else if (player.isMouseicorn) {
+      // Triple squeak! Play 3 back-to-back
+      this._sfx("celebrateMouseicorn");
+      setTimeout(() => this._sfx("celebrateMouseicorn"), 300);
+      setTimeout(() => this._sfx("celebrateMouseicorn"), 600);
+    }
+    else { this.levelCompleteSound(); }
+  }
+  fireBossSound() {
+    if (!this._sfx("fireBoss")) this.playSFX("sawtooth", 150, 0.2, 80, 0.2);
+  }
+  dragonBossSound() {
+    const s = SFX_MAP.dragonBoss;
+    if (!this.initialized || !s || !this.buffers[s.file]) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.buffers[s.file];
+    const gain = this.ctx.createGain();
+    gain.gain.value = s.vol;
+    src.connect(gain);
+    gain.connect(this.sfxGain);
+    src.start(0, 0, 3); // play first 3 seconds
+  }
+  bossIntroSound(bossType) {
+    if (bossType === "pharaoh_cat") this._sfx("catPharaohRoar");
+    else if (bossType === "storm_dragon") this.dragonBossSound();
+    else if (bossType === "gnome") this._sfx("angryBoss");
+  }
   // --- Per-form poop sounds (synthesized) ---
   mermaidPoopSound() {
     if (!this.initialized) return;
@@ -1258,12 +1362,12 @@ class AudioManager {
     this.playSFX("square", 2400, 0.04, 3200, 0.15);
     setTimeout(() => this.playSFX("square", 2800, 0.05, 3600, 0.15), 60);
   }
-  // Form-aware poop dispatcher
+  // Form-aware poop dispatcher (WAV variants first, synth fallback)
   formPoopSound(player) {
-    if (player.isMermaid) { this.mermaidPoopSound(); }
-    else if (player.isKittycorn) { this.kittycornPoopSound(); }
-    else if (player.isPixicorn) { this.pixicornPoopSound(); }
-    else if (player.isMouseicorn) { this.mousicornPoopSound(); }
+    if (player.isMermaid) { if (!this._sfxRandom("mermaidPoop", 3)) this.mermaidPoopSound(); }
+    else if (player.isKittycorn) { if (!this._sfxRandom("kittycornPoop", 3)) this.kittycornPoopSound(); }
+    else if (player.isPixicorn) { if (!this._sfxRandom("pixicornPoop", 3)) this.pixicornPoopSound(); }
+    else if (player.isMouseicorn) { if (!this._sfxRandom("mousicornPoop", 3)) this.mousicornPoopSound(); }
     else { this.poopSound(); }
   }
 }
@@ -1533,6 +1637,9 @@ class Player extends Entity {
     this.pixicornTransformTimer = 0;
     this.isMouseicorn = false;
     this.mousicornTransformTimer = 0;
+    this.growBigTimer = 0;      // > 0 = grow big freeze playing
+    this.shrinkTimer = 0;       // > 0 = shrink freeze playing
+    this.loseFormTimer = 0;     // > 0 = lose form freeze playing
     this.isUnderwater = false;  // set by level — modifies physics
     this._deathType = null;     // "fall" or "contact" — for death sound selection
   }
@@ -1688,6 +1795,39 @@ class Player extends Entity {
         this.animTimer = 0;
       }
       return; // freeze player during transformation
+    }
+
+    // Grow big freeze (hay bale power-up)
+    if (this.growBigTimer > 0) {
+      this.growBigTimer -= dt;
+      if (this.growBigTimer <= 0) {
+        this.animState = "idle";
+        this.animFrame = 0;
+        this.animTimer = 0;
+      }
+      return; // freeze player during grow
+    }
+
+    // Shrink freeze (big → small)
+    if (this.shrinkTimer > 0) {
+      this.shrinkTimer -= dt;
+      if (this.shrinkTimer <= 0) {
+        this.animState = "idle";
+        this.animFrame = 0;
+        this.animTimer = 0;
+      }
+      return; // freeze player during shrink
+    }
+
+    // Lose form freeze (form → big)
+    if (this.loseFormTimer > 0) {
+      this.loseFormTimer -= dt;
+      if (this.loseFormTimer <= 0) {
+        this.animState = "idle";
+        this.animFrame = 0;
+        this.animTimer = 0;
+      }
+      return; // freeze player during form loss
     }
 
     // Dynamic hitbox: big = full, small = 75%, kittycorn = 50% (like Mario small/big)
@@ -2001,6 +2141,7 @@ class Player extends Entity {
     if (this.isMermaid || this.isKittycorn || this.isPixicorn || this.isMouseicorn) {
       // Tier 1: Lose form → shrink to big  (sound: loseFormSound → shrink.wav)
       audio.loseFormSound();
+      this.loseFormTimer = CFG.LOSE_FORM_DURATION;
       if (this.isMermaid) {
         this.isMermaid = false;
         particles.floatingText(this.cx, this.cy - 15, "MERMAID LOST!", "#44ddee");
@@ -2024,6 +2165,7 @@ class Player extends Entity {
     } else if (this.isBig) {
       // Tier 2: Big → small  (sound: shrinkSound → shrink_2.wav)
       audio.shrinkSound();
+      this.shrinkTimer = CFG.SHRINK_DURATION;
       this.isBig = false;
       this.hasRainbow = false;
       this.hasWings = false;
@@ -2080,6 +2222,9 @@ class Player extends Entity {
     this.mermaidTransformTimer = 0;
     this.pixicornTransformTimer = 0;
     this.mousicornTransformTimer = 0;
+    this.growBigTimer = 0;
+    this.shrinkTimer = 0;
+    this.loseFormTimer = 0;
     this._deathType = null;
   }
 }
@@ -9303,6 +9448,7 @@ class GameStateMachine {
         break;
       case STATE_DYING:
         audio.stopMusic(0.3);
+        audio.stopCountdown();
         if (g.player._deathType === "fall") {
           audio.fallDeathSound();
         } else {
@@ -9311,10 +9457,11 @@ class GameStateMachine {
         break;
       case STATE_COMPLETE: {
         audio.stopMusic(0.5);
+        audio.stopCountdown();
         const nextIdx = g.currentLevelIndex + 1;
         const isGameComplete = nextIdx >= LEVEL_DEFS.length;
         setTimeout(() => {
-          audio.levelCompleteSound();
+          audio.celebrateSound(g.player);
           if (isGameComplete) {
             setTimeout(() => audio.playMusic("game_complete", false), 1500);
           }
@@ -9512,6 +9659,11 @@ class GameStateMachine {
     // Level timer countdown
     if (g.levelTimer > 0 && g.player.alive) {
       g.levelTimer -= dt * CFG.TIME_TICK_SPEED;
+      // Trigger countdown sound at 20 real seconds remaining
+      if (!g.countdownStarted && g.levelTimer <= CFG.TIME_COUNTDOWN_SFX) {
+        g.countdownStarted = true;
+        g.audio.playCountdown();
+      }
       if (g.levelTimer <= 0) {
         g.levelTimer = 0;
         g.player.lives--;
@@ -9601,6 +9753,14 @@ class GameStateMachine {
       }
     }
 
+    // Boss intro sound — plays when player enters arena
+    if (g.level.boss && g.level.boss.alive && !g.bossIntroPlayed) {
+      if (g.player.cx >= g.level.boss.arenaLeft) {
+        g.bossIntroPlayed = true;
+        g.audio.bossIntroSound(g.level.boss.bossType);
+      }
+    }
+
     // Update boss
     if (g.level.boss && g.level.boss.alive) {
       g.level.boss.update(dt, g.level, g.player.cx, g.player.cy);
@@ -9634,7 +9794,7 @@ class GameStateMachine {
             const fbvy = Math.sin(angle) * 2.8;
             g.level.fireballs.push(new Fireball(bx + g.level.boss.dir * 16, by + 10, fbvx, fbvy));
           }
-          g.audio.playSFX("sawtooth", 120, 0.25, 60, 0.2);
+          g.audio.fireBossSound();
         } else if (g.level.boss.bossType === "shadow_queen") {
           // Nova burst: 8 fireballs in a radial pattern
           for (let s = 0; s < 8; s++) {
@@ -9643,7 +9803,7 @@ class GameStateMachine {
             const fbvy = Math.sin(angle) * 2.2;
             g.level.fireballs.push(new Fireball(bx, by, fbvx, fbvy));
           }
-          g.audio.playSFX("sawtooth", 100, 0.2, 50, 0.25);
+          g.audio.fireBossSound();
         } else if (g.level.boss.bossType === "pharaoh_cat") {
           // Pharaoh cat: horizontal sound-wave arcs
           for (let s = -1; s <= 1; s++) {
@@ -9652,7 +9812,7 @@ class GameStateMachine {
             const fbvy = Math.sin(angle) * 1.5;
             g.level.fireballs.push(new Fireball(bx + g.level.boss.dir * 20, by - 10, fbvx, fbvy));
           }
-          g.audio.playSFX("sawtooth", 200, 0.15, 100, 0.15);
+          g.audio.fireBossSound();
         } else {
           // 3 fireballs in a spread pattern (flower boss)
           for (let s = -1; s <= 1; s++) {
@@ -9661,7 +9821,7 @@ class GameStateMachine {
             const fbvy = Math.sin(spreadAngle) * CFG.FLOWER_FIREBALL_SPEED;
             g.level.fireballs.push(new Fireball(bx, by, fbvx, fbvy));
           }
-          g.audio.playSFX("sawtooth", 150, 0.2, 80, 0.2);
+          g.audio.fireBossSound();
         }
       }
     }
@@ -10246,6 +10406,8 @@ class GameStateMachine {
         if (!g.player.isBig) {
           g.player.isBig = true;
           g.audio.growBigSound();
+          g.player.growBigTimer = CFG.GROW_BIG_DURATION;
+          g.player.invTimer = CFG.GROW_BIG_DURATION;
           g.particles.sparkleBurst(g.player.cx, g.player.cy, 15);
           g.particles.floatingText(g.player.cx, g.player.cy - 20, "BIG!", "#daa520");
         } else {
@@ -10399,6 +10561,8 @@ class Game {
     this.player = new Player(0, 0);
     this.gameTime = 0;
     this.levelTimer = 0;
+    this.countdownStarted = false;
+    this.bossIntroPlayed = false;
 
     this.lastTime = 0;
     this.accumulator = 0;
@@ -10431,6 +10595,8 @@ class Game {
     this.player.isUnderwater = def.zones ? !!def.zones[0].isUnderwater : !!def.isUnderwater;
     this.gameTime = 0;
     this.levelTimer = def.isBoss ? CFG.BOSS_LEVEL_TIME : CFG.LEVEL_TIME;
+    this.countdownStarted = false;
+    this.bossIntroPlayed = false;
     if (freshGame) {
       // Brand new game — reset everything
       this.currentLevelIndex = 0;

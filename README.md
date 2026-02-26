@@ -1,8 +1,10 @@
-# Rainbow Unicorn Quest
+# Rainbow Unicorn Quest — Co-op Edition
 
 A side-scrolling platformer built entirely in a single HTML file with HTML5 Canvas. No frameworks, no build step — just open and play.
 
-**Play now:** [https://glen-collab.github.io/Unicorn/](https://glen-collab.github.io/Unicorn/)
+**Play Co-op:** [https://glen-collab.github.io/coop_unicorn/](https://glen-collab.github.io/coop_unicorn/)
+
+**Play Single Player:** [https://glen-collab.github.io/Unicorn/](https://glen-collab.github.io/Unicorn/)
 
 ## The Game
 

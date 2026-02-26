@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Rainbow Unicorn Quest: Next Gen</title>
+<title>Rainbow Unicorn Quest: Co-Op</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { width:100%; height:100%; overflow:hidden; background:#000; }
@@ -763,6 +763,348 @@ for (const [code, info] of Object.entries(WORLD_CODES)) {
   WORLD_CODE_BY_NUM[info.world] = code;
 }
 
+// --- Story Scenes ---
+const STORY_SCENES = [
+  {
+    triggerAfterWorld: 0,
+    title: "A COLORFUL PROBLEM",
+    imageKey: "story_0",
+    bgColors: ["#1a0033", "#2a1050", "#0a0028"],
+    illustrationTheme: "meadow_dawn",
+    text1P: [
+      "Oh no! {P1} woke up and everything is... gray!",
+      "All the colors have vanished from Rainbow Land!",
+      "",
+      "A little sparkle trails off into the distance.",
+      "Someone must have taken the Rainbow Crystal!",
+      "",
+      "\"I have to find it!\" says {P1} bravely.",
+      "The trail leads to Meadow Valley,",
+      "where a very grumpy gnome is stomping around..."
+    ],
+    text2P: [
+      "Oh no! {P1} and {P2} woke up and everything is... gray!",
+      "All the colors have vanished from Rainbow Land!",
+      "",
+      "A little sparkle trails off into the distance.",
+      "Someone must have taken the Rainbow Crystal!",
+      "",
+      "\"We have to find it!\" they say together.",
+      "The trail leads to Meadow Valley,",
+      "where a very grumpy gnome is stomping around..."
+    ]
+  },
+  {
+    triggerAfterWorld: 1,
+    title: "THE GRUMPY GNOME",
+    imageKey: "story_1",
+    bgColors: ["#1a3300", "#224400", "#0a2244"],
+    illustrationTheme: "gnome_defeated",
+    text1P: [
+      "The gnome stops stomping and sits down.",
+      "\"I'm sorry I threw all those things at you...\"",
+      "\"My garden lost all its pretty colors",
+      "and I was just so upset!\"",
+      "",
+      "{P1} gives the gnome a pat on the head.",
+      "\"It's okay! I'm looking for the colors too.\"",
+      "",
+      "\"I saw a dark sparkle fly toward the lake!\"",
+      "says the gnome. \"Please bring the colors back!\"",
+      "",
+      "Next stop: Williams Lake!"
+    ],
+    text2P: [
+      "The gnome stops stomping and sits down.",
+      "\"I'm sorry I threw all those things at you...\"",
+      "\"My garden lost all its pretty colors",
+      "and I was just so upset!\"",
+      "",
+      "{P1} and {P2} give the gnome a pat on the head.",
+      "\"It's okay! We're looking for the colors too.\"",
+      "",
+      "\"I saw a dark sparkle fly toward the lake!\"",
+      "says the gnome. \"Please bring the colors back!\"",
+      "",
+      "Next stop: Williams Lake!"
+    ]
+  },
+  {
+    triggerAfterWorld: 2,
+    title: "MAKING A SPLASH",
+    imageKey: "story_2",
+    bgColors: ["#001133", "#002255", "#004488"],
+    illustrationTheme: "mermicorn_rise",
+    text1P: [
+      "The squid wasn't mean at all!",
+      "It was just protecting its squid babies",
+      "in the dark, colorless water.",
+      "",
+      "\"Thank you for being gentle with us,\"",
+      "bubbles the squid. \"Take this gift!\"",
+      "",
+      "A magical shell glows... {P1} transforms!",
+      "The Mermicorn! Now swimming is easy!",
+      "",
+      "The squid waves a tentacle toward the trees.",
+      "\"A hawk up there has been crying all day...\""
+    ],
+    text2P: [
+      "The squid wasn't mean at all!",
+      "It was just protecting its squid babies",
+      "in the dark, colorless water.",
+      "",
+      "\"Thank you for being gentle with us,\"",
+      "bubbles the squid. \"Take this gift!\"",
+      "",
+      "A magical shell glows... Mermicorn power!",
+      "Now {P1} and {P2} can swim anywhere!",
+      "",
+      "The squid waves a tentacle toward the trees.",
+      "\"A hawk up there has been crying all day...\""
+    ]
+  },
+  {
+    triggerAfterWorld: 3,
+    title: "FEATHERS AND FRIENDS",
+    imageKey: "story_3",
+    bgColors: ["#0a1a00", "#1a3311", "#2a4422"],
+    illustrationTheme: "kittycorn_forest",
+    text1P: [
+      "The hawk lands softly on a branch.",
+      "\"I wasn't trying to hurt you!",
+      "I just can't find my nest anywhere!",
+      "Everything looks the same without colors...\"",
+      "",
+      "{P1} helps the hawk find her nest.",
+      "Three baby hawks chirp happily inside!",
+      "",
+      "\"You're so kind! Here, take this forest magic!\"",
+      "A warm glow surrounds {P1}... Kittycorn!",
+      "With cat-like reflexes, anything is possible!",
+      "",
+      "\"I hear music from the waterfall...\""
+    ],
+    text2P: [
+      "The hawk lands softly on a branch.",
+      "\"I wasn't trying to hurt you!",
+      "I just can't find my nest anywhere!",
+      "Everything looks the same without colors...\"",
+      "",
+      "{P1} and {P2} help the hawk find her nest.",
+      "Three baby hawks chirp happily inside!",
+      "",
+      "\"You're so kind! Here, take this forest magic!\"",
+      "A warm glow surrounds them... Kittycorn!",
+      "With cat-like reflexes, anything is possible!",
+      "",
+      "\"I hear music from the waterfall...\""
+    ]
+  },
+  {
+    triggerAfterWorld: 4,
+    title: "PIXIE PARTY",
+    imageKey: "story_4",
+    bgColors: ["#220044", "#440066", "#6600aa"],
+    illustrationTheme: "pixicorn_sparkle",
+    text1P: [
+      "The big flower wasn't blocking the path on purpose!",
+      "It was just so thirsty without the colorful sunshine",
+      "that it grew all tangled up!",
+      "",
+      "The pixies swirl around happily.",
+      "\"You helped our flower friend! Yay!",
+      "Here, have some pixie dust!\"",
+      "",
+      "Sparkles everywhere... {P1} grows tiny wings!",
+      "The Pixicorn! Now the sky is yours!",
+      "",
+      "\"But shhh... do you hear squeaking",
+      "from underground?\""
+    ],
+    text2P: [
+      "The big flower wasn't blocking the path on purpose!",
+      "It was just so thirsty without the colorful sunshine",
+      "that it grew all tangled up!",
+      "",
+      "The pixies swirl around happily.",
+      "\"You helped our flower friend! Yay!",
+      "Here, have some pixie dust!\"",
+      "",
+      "Sparkles everywhere... tiny wings appear!",
+      "Pixicorn! Now {P1} and {P2} can fly!",
+      "",
+      "\"But shhh... do you hear squeaking",
+      "from underground?\""
+    ]
+  },
+  {
+    triggerAfterWorld: 5,
+    title: "TINY BUT MIGHTY",
+    imageKey: "story_5",
+    bgColors: ["#1a1a00", "#332200", "#443300"],
+    illustrationTheme: "mousicorn_sewer",
+    text1P: [
+      "The rat king sniffles in the corner.",
+      "\"Nobody ever visits me down here...",
+      "I just wanted someone to play with!\"",
+      "",
+      "{P1} shares some cheese with the rat king.",
+      "\"I'll come visit you again, I promise!\"",
+      "",
+      "The rat king smiles. \"Take this, friend!\"",
+      "A tiny squeak... the Mousicorn form!",
+      "",
+      "Unicorn. Mermicorn. Kittycorn.",
+      "Pixicorn. Mousicorn. All five!",
+      "",
+      "\"I heard a shadow went around the world...\""
+    ],
+    text2P: [
+      "The rat king sniffles in the corner.",
+      "\"Nobody ever visits me down here...",
+      "I just wanted someone to play with!\"",
+      "",
+      "{P1} and {P2} share some cheese with him.",
+      "\"We'll come visit you again, we promise!\"",
+      "",
+      "The rat king smiles. \"Take this, friends!\"",
+      "A tiny squeak... the Mousicorn form!",
+      "",
+      "Unicorn. Mermicorn. Kittycorn.",
+      "Pixicorn. Mousicorn. All five!",
+      "",
+      "\"I heard a shadow went around the world...\""
+    ]
+  },
+  {
+    triggerAfterWorld: 6,
+    title: "AROUND THE WORLD",
+    imageKey: "story_6",
+    bgColors: ["#331100", "#663300", "#884400"],
+    illustrationTheme: "world_travel",
+    text1P: [
+      "The pharaoh cat bows gracefully.",
+      "\"I was guarding these golden treasures,",
+      "but without colors, their glow faded.",
+      "I thought you were here to steal them!\"",
+      "",
+      "\"Not at all!\" says {P1}. \"I'm trying",
+      "to bring all the colors back!\"",
+      "",
+      "The pharaoh cat purrs. \"The one who took",
+      "the crystal... she didn't mean to, you know.",
+      "She's just really, really sad.\"",
+      "",
+      "\"Look up. She's above the clouds.\""
+    ],
+    text2P: [
+      "The pharaoh cat bows gracefully.",
+      "\"I was guarding these golden treasures,",
+      "but without colors, their glow faded.",
+      "I thought you were here to steal them!\"",
+      "",
+      "\"Not at all!\" say {P1} and {P2}.",
+      "\"We're trying to bring all the colors back!\"",
+      "",
+      "The pharaoh cat purrs. \"The one who took",
+      "the crystal... she didn't mean to, you know.",
+      "She's just really, really sad.\"",
+      "",
+      "\"Look up. She's above the clouds.\""
+    ]
+  },
+  {
+    triggerAfterWorld: 7,
+    title: "ABOVE THE CLOUDS",
+    imageKey: "story_7",
+    bgColors: ["#000022", "#001144", "#220044"],
+    illustrationTheme: "storm_cleared",
+    text1P: [
+      "The dragon curls up and yawns.",
+      "\"Sorry about all the fire and lightning!",
+      "I was just trying to protect her.\"",
+      "",
+      "\"Protect who?\" asks {P1}.",
+      "",
+      "\"Shadow. The dark unicorn up in Rainbow Land.",
+      "She's not mean... she's just lonely.",
+      "She thinks nobody likes her,",
+      "so she ran away and hid.\"",
+      "",
+      "\"The Rainbow Crystal got stuck to her mane!",
+      "She doesn't even know she has it!\"",
+      "",
+      "A rainbow bridge forms in the sky..."
+    ],
+    text2P: [
+      "The dragon curls up and yawns.",
+      "\"Sorry about all the fire and lightning!",
+      "I was just trying to protect her.\"",
+      "",
+      "\"Protect who?\" ask {P1} and {P2}.",
+      "",
+      "\"Shadow. The dark unicorn up in Rainbow Land.",
+      "She's not mean... she's just lonely.",
+      "She thinks nobody likes her,",
+      "so she ran away and hid.\"",
+      "",
+      "\"The Rainbow Crystal got stuck to her mane!",
+      "She doesn't even know she has it!\"",
+      "",
+      "A rainbow bridge forms in the sky..."
+    ]
+  },
+  {
+    triggerAfterWorld: 8,
+    title: "FRIENDS FOREVER",
+    imageKey: "story_8",
+    bgColors: ["#002244", "#004488", "#2266aa"],
+    illustrationTheme: "rainbow_finale",
+    text1P: [
+      "Shadow's eyes fill with tears.",
+      "\"You came all this way... for ME?\"",
+      "",
+      "\"Of course!\" says {P1}. \"We were so worried!",
+      "Everyone misses you! The gnome, the squid,",
+      "the hawk, the pixies, everyone!\"",
+      "",
+      "\"I thought nobody liked me...\"",
+      "\"Are you kidding? You're our FRIEND!\"",
+      "",
+      "{P1} gives Shadow the biggest hug ever.",
+      "The crystal glows and colors flood back!",
+      "Shadow's dark coat shimmers",
+      "into beautiful purple sparkles!",
+      "",
+      "Everyone is friends. The rainbow shines bright.",
+      "",
+      "THE END"
+    ],
+    text2P: [
+      "Shadow's eyes fill with tears.",
+      "\"You came all this way... for ME?\"",
+      "",
+      "\"Of course!\" say {P1} and {P2}.",
+      "\"We were so worried about you!",
+      "Everyone misses you! The gnome, the squid,",
+      "the hawk, the pixies, everyone!\"",
+      "",
+      "\"I thought nobody liked me...\"",
+      "\"Are you kidding? You're our FRIEND!\"",
+      "",
+      "{P1} and {P2} give Shadow the biggest hug.",
+      "The crystal glows and colors flood back!",
+      "Shadow's dark coat shimmers",
+      "into beautiful purple sparkles!",
+      "",
+      "Everyone is friends. The rainbow shines bright.",
+      "",
+      "THE END"
+    ]
+  }
+];
+
 // --- Sprite Loader ---
 const SPRITES = {
   run: null,       // sprite sheet: 8 frames of gallop cycle
@@ -863,6 +1205,31 @@ loadSprite("shadowQueenBoss", "sprites/shadow_queen_boss.png");
 loadSprite("pharaohCatBoss", "sprites/pharoah_cat_boss.png");
 loadSprite("dragonBoss", "sprites/dragon_boss.png");
 
+// --- Palette Swap for Player 2 ---
+// Generate hue-rotated copies of all player sprite sheets
+const SPRITES_P2 = {};
+const P2_PLAYER_SPRITE_KEYS = [
+  "run", "idle", "fall", "hoopClear", "growWings", "jumpWings",
+  "jump", "standPoop", "runWings", "standPoopWings", "idleWings",
+  "mermicorn", "mermicornVictory",
+  "kittycornStand", "kittycornRun", "kittycornJump",
+  "kittycornStandPoop", "kittycornCelebrate",
+  "pixicorn", "mousicorn"
+];
+function generateP2Sprites() {
+  for (const key of P2_PLAYER_SPRITE_KEYS) {
+    const src = SPRITES[key];
+    if (!src) continue;
+    const oc = document.createElement("canvas");
+    oc.width = src.width;
+    oc.height = src.height;
+    const octx = oc.getContext("2d");
+    octx.filter = "hue-rotate(180deg) saturate(1.2)";
+    octx.drawImage(src, 0, 0);
+    SPRITES_P2[key] = oc;
+  }
+}
+
 // Tile types
 const TILE_EMPTY = 0;
 const TILE_GRASS = 1;  // top of ground (has grass visual)
@@ -876,6 +1243,9 @@ const STATE_COMPLETE = 3;
 const STATE_LEVEL_INTRO = 4;
 const STATE_CODE_ENTRY = 5;
 const STATE_PAUSED = 6;
+const STATE_PLAYER_SELECT = 7;
+const STATE_NAME_ENTRY = 8;
+const STATE_STORY = 9;
 
 // ============================================================
 //  SECTION 2: CORE ENGINE
@@ -892,88 +1262,106 @@ class SeededRNG {
   nextFloat(min, max) { return min + this.next() * (max - min); }
 }
 
-// --- Input Manager ---
+// --- Global Keyboard State (shared between both input managers) ---
+const KEYBOARD = {};
+let _globalLastLetter = "";
+
+window.addEventListener("keydown", e => {
+  e.preventDefault();
+  KEYBOARD[e.code] = true;
+  if (e.code.startsWith("Key") && e.code.length === 4) {
+    _globalLastLetter = e.code[3];
+  }
+  if (e.code === "Backspace") _globalLastLetter = "BACKSPACE";
+  if (e.code === "Escape") _globalLastLetter = "ESCAPE";
+});
+window.addEventListener("keyup", e => {
+  e.preventDefault();
+  KEYBOARD[e.code] = false;
+});
+
+// --- Input Manager (supports P1 and P2 via playerSlot) ---
 class InputManager {
-  constructor() {
-    this.keys = {};       // keyboard state (keydown/keyup event-driven)
-    this._gpKeys = {};    // gamepad state (rebuilt from scratch each frame)
-    this._combined = {};  // merged keyboard+gamepad (rebuilt each update)
+  constructor(playerSlot) {
+    this.playerSlot = playerSlot || 1;
+    this._gpKeys = {};
+    this._combined = {};
     this.justPressed = {};
     this._prev = {};
-    this.lastLetter = ""; // for code entry (A-Z)
-    // Gamepad state
-    this.gamepadIndex = null;
+    this.lastLetter = "";
     this.anyGamepadPressed = false;
-    // Konami Code state
+    // Konami Code state (P1 only)
     this._konamiSeq = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","KeyB","KeyA","Enter"];
     this._konamiIndex = 0;
     this._konamiDone = false;
     this.konamiJustCompleted = false;
-
-    window.addEventListener("keydown", e => {
-      e.preventDefault();
-      this.keys[e.code] = true;
-      // Capture letter keys for code entry
-      if (e.code.startsWith("Key") && e.code.length === 4) {
-        this.lastLetter = e.code[3]; // "KeyA" → "A"
-      }
-      if (e.code === "Backspace") this.lastLetter = "BACKSPACE";
-      if (e.code === "Escape") this.lastLetter = "ESCAPE";
-    });
-    window.addEventListener("keyup", e => {
-      e.preventDefault();
-      this.keys[e.code] = false;
-    });
-    window.addEventListener("gamepadconnected", e => {
-      this.gamepadIndex = e.gamepad.index;
-    });
-    window.addEventListener("gamepaddisconnected", e => {
-      if (this.gamepadIndex === e.gamepad.index) this.gamepadIndex = null;
-    });
+  }
+  // Map raw keyboard keys to normalized internal keys based on player slot
+  _getKeys() {
+    const keys = {};
+    if (this.playerSlot === 1) {
+      // P1: Arrow keys, Space, ShiftLeft (shoot), KeyP/ShiftRight (poop), Enter, KeyC
+      if (KEYBOARD["ArrowLeft"])  keys["ArrowLeft"] = true;
+      if (KEYBOARD["ArrowRight"]) keys["ArrowRight"] = true;
+      if (KEYBOARD["ArrowUp"])    keys["ArrowUp"] = true;
+      if (KEYBOARD["ArrowDown"])  keys["ArrowDown"] = true;
+      if (KEYBOARD["Space"])      keys["Space"] = true;
+      if (KEYBOARD["ShiftLeft"])  keys["ShiftLeft"] = true;
+      if (KEYBOARD["KeyP"])       keys["KeyP"] = true;
+      if (KEYBOARD["ShiftRight"]) keys["ShiftRight"] = true;
+      if (KEYBOARD["Enter"])      keys["Enter"] = true;
+      if (KEYBOARD["KeyC"])       keys["KeyC"] = true;
+      // Konami code letters
+      if (KEYBOARD["KeyA"]) keys["KeyA"] = true;
+      if (KEYBOARD["KeyB"]) keys["KeyB"] = true;
+    } else {
+      // P2: WASD, Q (jump), F (shoot), X (poop), E (confirm)
+      if (KEYBOARD["KeyA"]) keys["ArrowLeft"] = true;
+      if (KEYBOARD["KeyD"]) keys["ArrowRight"] = true;
+      if (KEYBOARD["KeyW"]) keys["ArrowUp"] = true;
+      if (KEYBOARD["KeyS"]) keys["ArrowDown"] = true;
+      if (KEYBOARD["KeyQ"]) keys["Space"] = true;
+      if (KEYBOARD["KeyF"]) keys["ShiftLeft"] = true;
+      if (KEYBOARD["KeyX"]) keys["KeyP"] = true;
+      if (KEYBOARD["KeyE"]) keys["Enter"] = true;
+    }
+    return keys;
   }
   pollGamepad() {
-    // Rebuild gamepad state from scratch each frame (no stale keys)
     this._gpKeys = {};
     this.anyGamepadPressed = false;
-    if (this.gamepadIndex === null) return;
-    const gp = navigator.getGamepads()[this.gamepadIndex];
+    // P1 uses gamepad index 0, P2 uses index 1
+    const gpIdx = this.playerSlot - 1;
+    const gamepads = navigator.getGamepads();
+    if (!gamepads) return;
+    const gp = gamepads[gpIdx];
     if (!gp) return;
-    // D-pad via axes (axes[0] = horizontal, axes[1] = vertical)
     const ax0 = gp.axes[0] || 0;
     const ax1 = gp.axes[1] || 0;
     if (ax0 < -0.5) this._gpKeys["ArrowLeft"]  = true;
     if (ax0 > 0.5)  this._gpKeys["ArrowRight"] = true;
     if (ax1 < -0.5) this._gpKeys["ArrowUp"]    = true;
     if (ax1 > 0.5)  this._gpKeys["ArrowDown"]  = true;
-    // D-pad via standard buttons 12-15 (override if pressed)
     if (gp.buttons.length > 15) {
       if (gp.buttons[12].pressed) this._gpKeys["ArrowUp"]    = true;
       if (gp.buttons[13].pressed) this._gpKeys["ArrowDown"]  = true;
       if (gp.buttons[14].pressed) this._gpKeys["ArrowLeft"]  = true;
       if (gp.buttons[15].pressed) this._gpKeys["ArrowRight"] = true;
     }
-    // Face buttons — NES USB: buttons[0]=B, buttons[1]=A
-    // Some controllers with "standard" mapping swap A/B
     const aBtn = gp.mapping === "standard" ? 0 : 1;
     const bBtn = gp.mapping === "standard" ? 1 : 0;
     const aBtnPressed = gp.buttons[aBtn] && gp.buttons[aBtn].pressed;
     const bBtnPressed = gp.buttons[bBtn] && gp.buttons[bBtn].pressed;
-    // A → Jump (Space)
     if (aBtnPressed) this._gpKeys["Space"] = true;
-    // B → Poop when Down held (KeyP), otherwise Shoot (ShiftLeft)
     if (this._gpKeys["ArrowDown"] && bBtnPressed) {
       this._gpKeys["KeyP"] = true;
     } else if (bBtnPressed) {
       this._gpKeys["ShiftLeft"] = true;
     }
-    // Raw face buttons for menus/konami (don't conflict with gameplay keys)
     if (aBtnPressed) this._gpKeys["_gpA"] = true;
     if (bBtnPressed) this._gpKeys["_gpB"] = true;
-    // Select → Code entry (KeyC)
     if (gp.buttons[8] && gp.buttons[8].pressed) this._gpKeys["KeyC"] = true;
-    // Start → Enter
     if (gp.buttons[9] && gp.buttons[9].pressed) this._gpKeys["Enter"] = true;
-    // Track any button press for audio init
     for (let i = 0; i < gp.buttons.length; i++) {
       if (gp.buttons[i].pressed) { this.anyGamepadPressed = true; break; }
     }
@@ -981,21 +1369,18 @@ class InputManager {
   update() {
     this.pollGamepad();
     this.konamiJustCompleted = false;
-    // Merge keyboard + gamepad into combined state
+    const kbKeys = this._getKeys();
     const combined = {};
-    for (const k in this.keys) if (this.keys[k]) combined[k] = true;
+    for (const k in kbKeys) if (kbKeys[k]) combined[k] = true;
     for (const k in this._gpKeys) if (this._gpKeys[k]) combined[k] = true;
-    // Compute just-pressed from combined vs previous combined
     for (const k in combined) {
       this.justPressed[k] = combined[k] && !this._prev[k];
     }
-    // Clear stale justPressed for keys no longer in combined
     for (const k in this._prev) {
       if (!combined[k]) this.justPressed[k] = false;
     }
-    // Konami code detection (on just-pressed directional/button inputs)
-    // Accepts gamepad A/B (_gpA/_gpB) as alternatives to KeyA/KeyB
-    if (!this._konamiDone) {
+    // Konami code detection (P1 only)
+    if (this.playerSlot === 1 && !this._konamiDone) {
       const expected = this._konamiSeq[this._konamiIndex];
       const konamiMatch = (k, exp) => {
         if (k === exp) return true;
@@ -1013,7 +1398,6 @@ class InputManager {
           }
           break;
         }
-        // Wrong input — only reset if it's a konami-relevant key
         if (this._konamiSeq.indexOf(k) !== -1) {
           this._konamiIndex = (k === this._konamiSeq[0]) ? 1 : 0;
         }
@@ -1023,20 +1407,21 @@ class InputManager {
     this._prev = Object.assign({}, combined);
   }
   consumeLetter() {
-    const l = this.lastLetter;
-    this.lastLetter = "";
+    if (this.playerSlot !== 1) return "";
+    const l = _globalLastLetter;
+    _globalLastLetter = "";
     return l;
   }
   held(code) { return !!this._combined[code]; }
   pressed(code) { return !!this.justPressed[code]; }
-  get left() { return this.held("ArrowLeft") || this.held("KeyA"); }
-  get right() { return this.held("ArrowRight") || this.held("KeyD"); }
-  get jump() { return this.pressed("Space") || this.pressed("ArrowUp") || this.pressed("KeyW"); }
-  get jumpHeld() { return this.held("Space") || this.held("ArrowUp") || this.held("KeyW"); }
-  get down() { return this.held("ArrowDown") || this.held("KeyS"); }
+  get left() { return this.held("ArrowLeft"); }
+  get right() { return this.held("ArrowRight"); }
+  get jump() { return this.pressed("Space") || this.pressed("ArrowUp"); }
+  get jumpHeld() { return this.held("Space") || this.held("ArrowUp"); }
+  get down() { return this.held("ArrowDown"); }
   get enter() { return this.pressed("Enter") || this.pressed("Space"); }
-  get poop() { return this.held("KeyP") || this.held("ShiftRight") || this.held("KeyX"); }
-  get shoot() { return this.pressed("KeyF") || this.pressed("ShiftLeft"); }
+  get poop() { return this.held("KeyP") || this.held("ShiftRight"); }
+  get shoot() { return this.pressed("ShiftLeft"); }
 }
 
 // --- SFX Lookup Table (swap any sound by changing the file value) ---
@@ -1426,6 +1811,47 @@ class Camera {
       this.shakeMag = 0;
     }
   }
+  // Co-op camera: follow midpoint of two players
+  followDuo(p1x, p1y, p1alive, p2x, p2y, p2alive, dt) {
+    let tx, ty;
+    if (p1alive && p2alive) {
+      tx = (p1x + p2x) / 2;
+      ty = (p1y + p2y) / 2;
+    } else if (p1alive) {
+      tx = p1x; ty = p1y;
+    } else if (p2alive) {
+      tx = p2x; ty = p2y;
+    } else {
+      tx = (p1x + p2x) / 2;
+      ty = (p1y + p2y) / 2;
+    }
+
+    const desiredX = tx - CFG.W * 0.5;
+    const desiredY = ty - CFG.H * 0.5;
+
+    const dx = desiredX - this.targetX;
+    const dy = desiredY - this.targetY;
+    if (Math.abs(dx) > this.deadZoneX) {
+      this.targetX += (dx - Math.sign(dx) * this.deadZoneX);
+    }
+    if (Math.abs(dy) > this.deadZoneY) {
+      this.targetY += (dy - Math.sign(dy) * this.deadZoneY);
+    }
+
+    this.x += (this.targetX - this.x) * CFG.CAM_LERP;
+    this.y += (this.targetY - this.y) * CFG.CAM_LERP;
+
+    this.x = Math.max(0, Math.min(this.x, this.maxX));
+    this.y = Math.max(0, Math.min(this.y, this.maxY));
+
+    if (this.shakeMag > 0.5) {
+      this.shakeX = (Math.random() - 0.5) * this.shakeMag;
+      this.shakeY = (Math.random() - 0.5) * this.shakeMag;
+      this.shakeMag *= CFG.SHAKE_DECAY;
+    } else {
+      this.shakeX = 0; this.shakeY = 0; this.shakeMag = 0;
+    }
+  }
   shake(magnitude) {
     this.shakeMag = Math.max(this.shakeMag, magnitude);
   }
@@ -1599,8 +2025,9 @@ class Entity {
 
 // --- Player ---
 class Player extends Entity {
-  constructor(x, y) {
+  constructor(x, y, playerSlot) {
     super(x, y, CFG.PLAYER_W, CFG.PLAYER_H);
+    this.playerSlot = playerSlot || 1;
     this.facing = 1;
     this.onGround = false;
     this.wasOnGround = false;
@@ -1617,6 +2044,8 @@ class Player extends Entity {
     this.invTimer = 0;
     this.stars = 0;
     this.lives = CFG.LIVES;
+    this._deathHandled = false; // co-op: has state machine processed this death?
+    this.respawnTimer = 0;      // co-op: countdown to respawn
     this.landImpact = 0; // for squash/stretch and shake
     this.squash = 0;
     this.runDust = 0;
@@ -2069,7 +2498,6 @@ class Player extends Entity {
 
     // Death by falling off level
     if (this.y > level.height + 40) {
-      this.lives--;
       this._deathType = "fall";
       this.die();
     }
@@ -2175,8 +2603,8 @@ class Player extends Entity {
       this.invTimer = 0.8;
       particles.floatingText(this.cx, this.cy - 15, "SHRINK!", "#daa520");
     } else {
-      // Tier 3: Small + hit = death  (sound: handled by onStateEnter → deathSound)
-      this.lives--;
+      // Tier 3: Small + hit = death  (sound: handled by state machine)
+      // Lives are decremented by the state machine (shared pool in co-op)
       this._deathType = "contact";
       this.die();
     }
@@ -2226,6 +2654,8 @@ class Player extends Entity {
     this.shrinkTimer = 0;
     this.loseFormTimer = 0;
     this._deathType = null;
+    this._deathHandled = false;
+    this.respawnTimer = 0;
   }
 }
 
@@ -6773,8 +7203,8 @@ class TileRenderer {
 class SpriteDrawer {
   constructor() {}
 
-  // Draw the unicorn using loaded sprite images
-  drawPlayer(ctx, player, gt) {
+  // Draw the unicorn using loaded sprite images (isP2 = use palette-swapped sprites)
+  drawPlayer(ctx, player, gt, isP2) {
     const c = ctx;
     const px = Math.round(player.cx);
     const py = Math.round(player.bottom);
@@ -7008,31 +7438,43 @@ class SpriteDrawer {
     }
 
     if (sprite) {
+      // P2 palette swap: use hue-rotated sprite if available
+      let drawSprite = sprite;
+      if (isP2) {
+        for (const key of P2_PLAYER_SPRITE_KEYS) {
+          if (SPRITES[key] === sprite && SPRITES_P2[key]) {
+            drawSprite = SPRITES_P2[key];
+            break;
+          }
+        }
+      }
       // Draw sprite image - anchor at bottom center (feet)
-      // Scale from sprite native size to game draw size
       const scaleRatio = drawOverrideH / srcH;
       const drawW = srcW * scaleRatio;
       const drawH = drawOverrideH;
-      let footAdj = 5; // shift sprite down so feet touch ground (sprites have bottom padding)
-      if (player.isMouseicorn && !player.isUnderwater) footAdj = 19; // mousicorn art sits higher in frame
-      // Apply celebrate bounce flip (kittycorn hoop clear alternates direction)
+      let footAdj = 5;
+      if (player.isMouseicorn && !player.isUnderwater) footAdj = 19;
       if (celebrateFlip !== 1) c.scale(celebrateFlip, 1);
       c.drawImage(
-        sprite,
-        srcX, srcY, srcW, srcH,     // source rect
-        -drawW / 2, -drawH + footAdj, drawW, drawH  // dest rect (bottom-center anchor)
+        drawSprite,
+        srcX, srcY, srcW, srcH,
+        -drawW / 2, -drawH + footAdj, drawW, drawH
       );
     } else {
-      // Procedural fallback if sprites haven't loaded
-      this.drawPlayerFallback(c, player, gt, dw, dh);
+      // Procedural fallback if sprites haven't loaded (P2 gets blue tint)
+      if (isP2) {
+        this.drawPlayerFallback(c, player, gt, dw, dh, true);
+      } else {
+        this.drawPlayerFallback(c, player, gt, dw, dh);
+      }
     }
 
     c.restore();
   }
 
   // Simple procedural fallback while sprites load
-  drawPlayerFallback(c, player, gt, dw, dh) {
-    c.fillStyle = "#ffffff";
+  drawPlayerFallback(c, player, gt, dw, dh, isP2) {
+    c.fillStyle = isP2 ? "#66ccff" : "#ffffff";
     this.roundRect(c, -dw/2, -dh, dw, dh, 6);
     c.fill();
     // Horn
@@ -8656,82 +9098,84 @@ class SpriteDrawer {
   }
 }
 
-// --- HUD ---
+// --- HUD (Co-Op: P1 left, shared lives center, P2 right) ---
 class HUD {
-  draw(ctx, player, gt, levelDef, levelTimer) {
+  draw(ctx, player, gt, levelDef, levelTimer, player2, sharedLives) {
     ctx.save();
 
     // Semi-transparent bar at top
     ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.fillRect(0, 0, CFG.W, 22);
 
-    ctx.font = "bold 10px monospace";
+    ctx.font = "bold 9px monospace";
     ctx.textBaseline = "top";
-    ctx.textAlign = "left";
 
-    // LEFT SIDE: Lives (up to 3 filled hearts + xN)
-    const heartsToShow = Math.min(player.lives, 3);
+    // LEFT SIDE: P1 info
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("P1", 4, 2);
+    ctx.fillStyle = "#ffee44";
+    ctx.fillText("\u2605" + player.stars, 20, 6);
+    // P1 power-up indicator
+    let lx = 48;
+    if (player.hasRainbow) { ctx.fillStyle = "#ff4488"; ctx.fillText("RB", lx, 6); lx += 18; }
+    if (player.isMermaid) { ctx.fillStyle = "#44ddee"; ctx.fillText("MER", lx, 6); lx += 24; }
+    if (player.isKittycorn) { ctx.fillStyle = "#ff88cc"; ctx.fillText("KIT", lx, 6); lx += 22; }
+    if (player.isPixicorn) { ctx.fillStyle = "#cc88ff"; ctx.fillText("PIX", lx, 6); lx += 22; }
+    if (player.isMouseicorn) { ctx.fillStyle = "#aa8866"; ctx.fillText("MOU", lx, 6); lx += 24; }
+    // P1 respawning
+    if (!player.alive && player.respawnTimer > 0) {
+      ctx.fillStyle = Math.floor(gt * 4) % 2 === 0 ? "#ff6666" : "#ff9999";
+      ctx.fillText("RESPAWNING...", 4, 14);
+    }
+
+    // CENTER: Shared lives + level name
+    ctx.textAlign = "center";
+    const heartsToShow = Math.min(sharedLives, 5);
+    const heartStartX = CFG.W / 2 - heartsToShow * 7;
     for (let i = 0; i < heartsToShow; i++) {
-      this.drawMiniHeart(ctx, 6 + i * 14, 5);
+      this.drawMiniHeart(ctx, heartStartX + i * 14, 3);
     }
     ctx.fillStyle = "#ffffff";
-    ctx.fillText("x" + player.lives, 48, 6);
+    ctx.fillText("x" + sharedLives, CFG.W / 2 + heartsToShow * 7 + 8, 4);
+    // Level name below hearts
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = "7px monospace";
+    const lvlName = levelDef ? levelDef.name + " " + levelDef.title : "";
+    ctx.fillText(lvlName, CFG.W / 2, 14);
 
-    // Stars count
-    ctx.fillStyle = "#ffee44";
-    ctx.fillText("\u2605" + player.stars, 75, 6);
-
-    // Flowers count
-    ctx.fillStyle = "#ff88cc";
-    ctx.fillText("\u2740" + player.flowersRevived + "/" + CFG.FLOWERS_FOR_LIFE, 110, 6);
-
-    // RIGHT SIDE: Power-up indicators (right-aligned, no overlap)
-    ctx.textAlign = "right";
-    let rx = CFG.W - 6;
-
-    if (player.hasRainbow) {
-      ctx.fillStyle = "#ff4488";
-      ctx.fillText("\u2606RAINBOW", rx, 6);
-      rx -= 62;
-    }
-    if (player.isMermaid) {
-      ctx.fillStyle = "#44ddee";
-      ctx.fillText("\u2728MERMAID", rx, 6);
-      rx -= 60;
-    }
-    if (player.isKittycorn) {
-      ctx.fillStyle = "#ff88cc";
-      ctx.fillText("\u2728KITTY", rx, 6);
-      rx -= 42;
-    }
-    if (player.isPixicorn) {
-      ctx.fillStyle = "#cc88ff";
-      ctx.fillText("\u2728PIXIE", rx, 6);
-      rx -= 42;
-    }
-    if (player.isMouseicorn) {
-      ctx.fillStyle = "#aa8866";
-      ctx.fillText("\u2728MOUSE", rx, 6);
-      rx -= 48;
-    }
-
-    // CENTER: Level name
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.textAlign = "center";
-    const lvlName = levelDef ? levelDef.name + "  " + levelDef.title : "";
-    ctx.fillText(lvlName, CFG.W / 2, 6);
-
-    // Timer (right of center)
+    // Timer (right of center area)
+    ctx.font = "bold 9px monospace";
     const timeVal = Math.ceil(levelTimer || 0);
     if (timeVal <= CFG.TIME_WARNING) {
-      // Flash red when low
       ctx.fillStyle = Math.floor(gt * 4) % 2 === 0 ? "#ff4444" : "#ff8888";
     } else {
       ctx.fillStyle = "#ffffff";
     }
     ctx.textAlign = "right";
-    ctx.fillText(timeVal, CFG.W / 2 + 80, 6);
-    ctx.textAlign = "left";
+    ctx.fillText(timeVal, CFG.W / 2 + 70, 4);
+
+    // RIGHT SIDE: P2 info (blue tint)
+    if (player2) {
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#66ccff";
+      ctx.fillText("P2", CFG.W - 4, 2);
+      ctx.fillStyle = "#ffee44";
+      ctx.fillText("\u2605" + player2.stars, CFG.W - 20, 6);
+      // P2 power-up indicator
+      let rx = CFG.W - 48;
+      if (player2.hasRainbow) { ctx.fillStyle = "#ff4488"; ctx.fillText("RB", rx, 6); rx -= 18; }
+      if (player2.isMermaid) { ctx.fillStyle = "#44ddee"; ctx.fillText("MER", rx, 6); rx -= 24; }
+      if (player2.isKittycorn) { ctx.fillStyle = "#ff88cc"; ctx.fillText("KIT", rx, 6); rx -= 22; }
+      if (player2.isPixicorn) { ctx.fillStyle = "#cc88ff"; ctx.fillText("PIX", rx, 6); rx -= 22; }
+      if (player2.isMouseicorn) { ctx.fillStyle = "#aa8866"; ctx.fillText("MOU", rx, 6); rx -= 24; }
+      // P2 respawning
+      if (!player2.alive && player2.respawnTimer > 0) {
+        ctx.fillStyle = Math.floor(gt * 4) % 2 === 0 ? "#6688ff" : "#99bbff";
+        ctx.textAlign = "right";
+        ctx.fillText("RESPAWNING...", CFG.W - 4, 14);
+      }
+    }
 
     ctx.restore();
   }
@@ -9417,6 +9861,18 @@ class GameStateMachine {
     this.stateTimer = 0;
     this.titlePhase = 0;
     this.deathTimer = 0;
+    // Player select
+    this.selectIndex = 0; // 0=1P, 1=2P
+    // Name entry
+    this.nameEntrySlot = 1;
+    this.nameInput = "";
+    this.nameLetterIdx = 0;
+    this.nameRepeatTimer = 0;
+    this.nameRepeatDir = 0;
+    // Story
+    this.storySceneIndex = -1;
+    this.storyScrollY = 0;
+    this.storyPhase = 0;
   }
   setState(s) {
     const prev = this.state;
@@ -9449,10 +9905,14 @@ class GameStateMachine {
       case STATE_DYING:
         audio.stopMusic(0.3);
         audio.stopCountdown();
-        if (g.player._deathType === "fall") {
-          audio.fallDeathSound();
-        } else {
-          audio.deathSound();
+        // Play death sound for the player(s) that died
+        {
+          const deathType = g.player._deathType || g.player2._deathType || "contact";
+          if (deathType === "fall") {
+            audio.fallDeathSound();
+          } else {
+            audio.deathSound();
+          }
         }
         break;
       case STATE_COMPLETE: {
@@ -9460,14 +9920,23 @@ class GameStateMachine {
         audio.stopCountdown();
         const nextIdx = g.currentLevelIndex + 1;
         const isGameComplete = nextIdx >= LEVEL_DEFS.length;
+        // Find the player that completed (touched hoop / boss defeated)
+        const completingPlayer = g._completingPlayer || g.player;
         setTimeout(() => {
-          audio.celebrateSound(g.player);
+          audio.celebrateSound(completingPlayer);
           if (isGameComplete) {
             setTimeout(() => audio.playMusic("game_complete", false), 1500);
           }
         }, 500);
         break;
       }
+      case STATE_PLAYER_SELECT:
+        break;
+      case STATE_NAME_ENTRY:
+        break;
+      case STATE_STORY:
+        audio.stopMusic(0.5);
+        break;
     }
   }
   update(dt) {
@@ -9496,16 +9965,26 @@ class GameStateMachine {
       case STATE_CODE_ENTRY:
         this.updateCodeEntry(dt);
         break;
+      case STATE_PLAYER_SELECT:
+        this.updatePlayerSelect(dt);
+        break;
+      case STATE_NAME_ENTRY:
+        this.updateNameEntry(dt);
+        break;
+      case STATE_STORY:
+        this.updateStory(dt);
+        break;
     }
   }
   updateTitle(dt) {
-    // Only Start/Enter starts the game (not A/Space — that's needed for konami code)
-    if (this.game.input.pressed("Enter") && this.stateTimer > 0.5) {
+    // Either player's Enter goes to player select
+    const anyEnter = this.game.input.pressed("Enter") || this.game.input2.pressed("Enter");
+    if (anyEnter && this.stateTimer > 0.5) {
       this.game.audio.menuSelect();
-      this.game.startLevel(true);
-      this.setState(STATE_LEVEL_INTRO);
+      this.selectIndex = 0;
+      this.setState(STATE_PLAYER_SELECT);
     }
-    // Press C or Select to enter code
+    // Press C or Select to enter code (P1 only for code entry)
     if (this.game.input.pressed("KeyC") && this.stateTimer > 0.5) {
       this.game.audio.menuSelect();
       this.codeInput = "";
@@ -9524,16 +10003,26 @@ class GameStateMachine {
       this.codeMessageTimer -= dt;
       if (this.codeMessageTimer <= 0) {
         if (this.codeSuccess) {
-          // Code was valid — start that world
-          this.game.startLevel(true); // resets everything
-          this.game.currentLevelIndex = this.codeTargetIndex;
+          // Code was valid — start that world (skip story)
+          const g = this.game;
+          g.startLevel(true);
+          g.currentLevelIndex = this.codeTargetIndex;
           const def = LEVEL_DEFS[this.codeTargetIndex];
-          this.game.level = new Level(def);
-          this.game.level.generate();
-          this.game.parallax = new ParallaxBackground(def);
-          this.game.camera.setBounds(this.game.level.width, this.game.level.height);
-          this.game.player.reset(this.game.level.spawnX, this.game.level.spawnY);
-          this.game.player.isUnderwater = !!def.isUnderwater;
+          g.level = new Level(def);
+          g.level.generate();
+          g.parallax = new ParallaxBackground(def);
+          g.camera.setBounds(g.level.width, g.level.height);
+          g.player.reset(g.level.spawnX, g.level.spawnY);
+          g.player.isUnderwater = !!def.isUnderwater;
+          g.player._deathHandled = false;
+          if (g.p2Active) {
+            g.player2.reset(g.level.spawnX + 30, g.level.spawnY);
+            g.player2.isUnderwater = !!def.isUnderwater;
+            g.player2._deathHandled = false;
+          } else {
+            g.player2.alive = false;
+            g.player2.respawnTimer = 0;
+          }
           this.setState(STATE_LEVEL_INTRO);
         } else {
           this.codeMessage = "";
@@ -9632,23 +10121,27 @@ class GameStateMachine {
     }
   }
   updateLevelIntro(dt) {
-    // Show level name for 2 seconds, then start playing
-    if (this.stateTimer > 2.0 || (this.game.input.enter && this.stateTimer > 0.5)) {
+    // Show level name for 2 seconds, either player can skip
+    const anyEnter = this.game.input.enter || this.game.input2.enter;
+    if (this.stateTimer > 2.0 || (anyEnter && this.stateTimer > 0.5)) {
       this.setState(STATE_PLAYING);
     }
   }
   updatePaused(dt) {
-    // Unpause on Start/Enter
-    if (this.game.input.pressed("Enter") && this.stateTimer > 0.3) {
+    // Either player can unpause
+    const anyEnter = this.game.input.pressed("Enter") || this.game.input2.pressed("Enter");
+    if (anyEnter && this.stateTimer > 0.3) {
       this.game.audio.menuSelect();
       this.setState(STATE_PLAYING);
     }
   }
   updatePlaying(dt) {
     const g = this.game;
+    const players = g.p2Active ? g.players : [g.player];
+    const activePlayers = players.filter(p => p.alive);
 
-    // Pause on Start/Enter
-    if (g.input.pressed("Enter")) {
+    // Pause on either player's Enter
+    if (g.input.pressed("Enter") || g.input2.pressed("Enter")) {
       g.audio.menuSelect();
       this.setState(STATE_PAUSED);
       return;
@@ -9656,590 +10149,243 @@ class GameStateMachine {
 
     g.gameTime += dt;
 
-    // Level timer countdown
-    if (g.levelTimer > 0 && g.player.alive) {
+    // Level timer countdown (always ticks while playing, even during respawn)
+    if (g.levelTimer > 0) {
       g.levelTimer -= dt * CFG.TIME_TICK_SPEED;
-      // Trigger countdown sound at 20 real seconds remaining
       if (!g.countdownStarted && g.levelTimer <= CFG.TIME_COUNTDOWN_SFX) {
         g.countdownStarted = true;
         g.audio.playCountdown();
       }
       if (g.levelTimer <= 0) {
         g.levelTimer = 0;
-        g.player.lives--;
-        g.player._deathType = "contact";
-        g.player.die();
+        for (const p of players) {
+          if (p.alive) { p._deathType = "contact"; p.die(); }
+        }
+        g.sharedLives--;
         g.particles.floatingText(g.player.cx, g.player.cy - 20, "TIME UP!", "#ff4444");
       }
     }
 
-    // Zone-aware dynamic isUnderwater
+    // Zone-aware dynamic isUnderwater (per player)
     if (g.level.levelDef.zones) {
-      const playerCol = Math.floor(g.player.cx / CFG.TILE);
-      const zone = g.level.getZoneAtCol(playerCol);
-      const wasUnderwater = g.player.isUnderwater;
-      g.player.isUnderwater = !!zone.isUnderwater;
-      // Auto-clear incompatible transforms on zone transition
-      if (wasUnderwater !== g.player.isUnderwater) {
-        if (!g.player.isUnderwater && g.player.isMermaid) g.player.isMermaid = false;
-        if (g.player.isUnderwater) {
-          g.player.isMouseicorn = false;
-          g.player.isKittycorn = false;
-          g.player.isPixicorn = false;
+      for (const p of activePlayers) {
+        const playerCol = Math.floor(p.cx / CFG.TILE);
+        const zone = g.level.getZoneAtCol(playerCol);
+        const wasUnderwater = p.isUnderwater;
+        p.isUnderwater = !!zone.isUnderwater;
+        if (wasUnderwater !== p.isUnderwater) {
+          if (!p.isUnderwater && p.isMermaid) p.isMermaid = false;
+          if (p.isUnderwater) {
+            p.isMouseicorn = false;
+            p.isKittycorn = false;
+            p.isPixicorn = false;
+          }
         }
       }
     }
 
-    // Update player
-    g.player.update(dt, g.level, g.input, g.audio, g.particles, g.camera);
+    // Update both players (only if alive)
+    if (g.player.alive) g.player.update(dt, g.level, g.input, g.audio, g.particles, g.camera);
+    if (g.player2.alive) g.player2.update(dt, g.level, g.input2, g.audio, g.particles, g.camera);
+
+    // Tether removed — screen-edge clamp applied after camera update below
 
     // Update entities
-    for (const star of g.level.stars) {
-      if (star.alive) star.update(dt, g.gameTime);
-    }
-    for (const fly of g.level.flies) {
-      if (fly.alive) fly.update(dt, g.gameTime);
-    }
-    for (const gnome of g.level.gnomes) {
-      if (gnome.alive) gnome.update(dt, g.gameTime);
-    }
+    for (const star of g.level.stars) { if (star.alive) star.update(dt, g.gameTime); }
+    for (const fly of g.level.flies) { if (fly.alive) fly.update(dt, g.gameTime); }
+    for (const gnome of g.level.gnomes) { if (gnome.alive) gnome.update(dt, g.gameTime); }
     if (g.level.hoop) g.level.hoop.update(dt, g.gameTime);
-    for (const wc of g.level.wingCrystals) {
-      if (wc.alive && !wc.collected) wc.update(dt, g.gameTime);
-    }
-    for (const df of g.level.deadFlowers) {
-      if (df.alive) df.update(dt, g.gameTime);
-    }
-    for (const bf of g.level.blackFlowers) {
-      if (bf.alive && !bf.used) bf.update(dt, g.gameTime);
-    }
-    for (const hb of g.level.hayBales) {
-      if (hb.alive) hb.update(dt, g.level);
-    }
-    for (const gate of g.level.formGates) {
-      gate.update(dt);
-    }
-    for (const f of g.level.fish) {
-      if (f.alive) f.update(dt, g.gameTime);
-    }
-    for (const j of g.level.jellyfish) {
-      if (j.alive) j.update(dt, g.gameTime);
-    }
-    for (const nw of g.level.narwhals) {
-      if (nw.alive) nw.update(dt, g.gameTime);
-    }
-    for (const bird of g.level.birds) {
-      if (bird.alive) bird.update(dt, g.gameTime);
-    }
-    for (const mg of g.level.mermaidGems) {
-      if (mg.alive && !mg.collected) mg.update(dt, g.gameTime);
-    }
-    for (const kg of g.level.kittycornGems) {
-      if (kg.alive && !kg.collected) kg.update(dt, g.gameTime);
-    }
-    for (const pg of g.level.pixicornGems) {
-      if (pg.alive && !pg.collected) pg.update(dt, g.gameTime);
-    }
-    for (const mg of g.level.mousicornGems) {
-      if (mg.alive && !mg.collected) mg.update(dt, g.gameTime);
-    }
-    // Update fireballs
+    for (const wc of g.level.wingCrystals) { if (wc.alive && !wc.collected) wc.update(dt, g.gameTime); }
+    for (const df of g.level.deadFlowers) { if (df.alive) df.update(dt, g.gameTime); }
+    for (const bf of g.level.blackFlowers) { if (bf.alive && !bf.used) bf.update(dt, g.gameTime); }
+    for (const hb of g.level.hayBales) { if (hb.alive) hb.update(dt, g.level); }
+    for (const gate of g.level.formGates) { gate.update(dt); }
+    for (const f of g.level.fish) { if (f.alive) f.update(dt, g.gameTime); }
+    for (const j of g.level.jellyfish) { if (j.alive) j.update(dt, g.gameTime); }
+    for (const nw of g.level.narwhals) { if (nw.alive) nw.update(dt, g.gameTime); }
+    for (const bird of g.level.birds) { if (bird.alive) bird.update(dt, g.gameTime); }
+    for (const mg of g.level.mermaidGems) { if (mg.alive && !mg.collected) mg.update(dt, g.gameTime); }
+    for (const kg of g.level.kittycornGems) { if (kg.alive && !kg.collected) kg.update(dt, g.gameTime); }
+    for (const pg of g.level.pixicornGems) { if (pg.alive && !pg.collected) pg.update(dt, g.gameTime); }
+    for (const mg of g.level.mousicornGems) { if (mg.alive && !mg.collected) mg.update(dt, g.gameTime); }
     for (let i = g.level.fireballs.length - 1; i >= 0; i--) {
       const fb = g.level.fireballs[i];
-      if (fb.alive) {
-        fb.update(dt);
-      } else {
-        g.level.fireballs.splice(i, 1);
-      }
+      if (fb.alive) fb.update(dt); else g.level.fireballs.splice(i, 1);
     }
 
-    // Boss intro sound — plays when player enters arena
+    // Boss intro sound — first player to reach arena
     if (g.level.boss && g.level.boss.alive && !g.bossIntroPlayed) {
-      if (g.player.cx >= g.level.boss.arenaLeft) {
-        g.bossIntroPlayed = true;
-        g.audio.bossIntroSound(g.level.boss.bossType);
+      for (const p of activePlayers) {
+        if (p.cx >= g.level.boss.arenaLeft) {
+          g.bossIntroPlayed = true;
+          g.audio.bossIntroSound(g.level.boss.bossType);
+          break;
+        }
       }
     }
 
-    // Update boss
+    // Update boss — target nearest alive player
     if (g.level.boss && g.level.boss.alive) {
-      g.level.boss.update(dt, g.level, g.player.cx, g.player.cy);
+      let targetX = g.player.cx, targetY = g.player.cy;
+      if (activePlayers.length > 0) {
+        let nearest = activePlayers[0];
+        let nearDist = Infinity;
+        for (const p of activePlayers) {
+          const ddx = p.cx - g.level.boss.cx;
+          const ddy = p.cy - g.level.boss.cy;
+          const d = ddx * ddx + ddy * ddy;
+          if (d < nearDist) { nearDist = d; nearest = p; }
+        }
+        targetX = nearest.cx; targetY = nearest.cy;
+      }
+      g.level.boss.update(dt, g.level, targetX, targetY);
       // Boss defeated check
       if (g.level.boss.defeated && g.level.boss.defeatTimer > 2.0) {
         g.audio.hoopSound();
         g.particles.sparkleBurst(g.level.boss.cx, g.level.boss.cy, 30);
-        g.player.animState = "hoopClear";
-        g.player.animFrame = 0;
-        g.player.animTimer = 0;
-        g.player.speedX = 0;
-        g.player.vx = 0;
+        // Both alive players celebrate
+        for (const p of activePlayers) {
+          p.animState = "hoopClear";
+          p.animFrame = 0;
+          p.animTimer = 0;
+          p.speedX = 0;
+          p.vx = 0;
+        }
+        g._completingPlayer = activePlayers[0] || g.player;
         g.level.boss.alive = false;
         this.setState(STATE_COMPLETE);
       }
-      // Boss fireball spawning (flower/pharaoh_cat/storm_dragon/shadow_queen)
+      // Boss fireball spawning
       if (g.level.boss.wantsToShoot) {
         g.level.boss.wantsToShoot = false;
         const bx = g.level.boss.cx;
         const by = g.level.boss.cy;
-        const px = g.player.cx;
-        const py = g.player.cy;
-        const dx = px - bx;
-        const dy = py - by;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const dx = targetX - bx;
+        const dy = targetY - by;
         if (g.level.boss.bossType === "storm_dragon") {
-          // Dragon breath: 5 fireballs in a wide cone downward
           for (let s = -2; s <= 2; s++) {
             const angle = Math.atan2(dy, dx) + s * 0.2;
-            const fbvx = Math.cos(angle) * 2.8;
-            const fbvy = Math.sin(angle) * 2.8;
-            g.level.fireballs.push(new Fireball(bx + g.level.boss.dir * 16, by + 10, fbvx, fbvy));
+            g.level.fireballs.push(new Fireball(bx + g.level.boss.dir * 16, by + 10, Math.cos(angle) * 2.8, Math.sin(angle) * 2.8));
           }
           g.audio.fireBossSound();
         } else if (g.level.boss.bossType === "shadow_queen") {
-          // Nova burst: 8 fireballs in a radial pattern
           for (let s = 0; s < 8; s++) {
             const angle = (s / 8) * Math.PI * 2 + g.level.boss.queenGlow;
-            const fbvx = Math.cos(angle) * 2.2;
-            const fbvy = Math.sin(angle) * 2.2;
-            g.level.fireballs.push(new Fireball(bx, by, fbvx, fbvy));
+            g.level.fireballs.push(new Fireball(bx, by, Math.cos(angle) * 2.2, Math.sin(angle) * 2.2));
           }
           g.audio.fireBossSound();
         } else if (g.level.boss.bossType === "pharaoh_cat") {
-          // Pharaoh cat: horizontal sound-wave arcs
           for (let s = -1; s <= 1; s++) {
             const angle = Math.atan2(dy, dx) + s * 0.35;
-            const fbvx = Math.cos(angle) * 2.5;
-            const fbvy = Math.sin(angle) * 1.5;
-            g.level.fireballs.push(new Fireball(bx + g.level.boss.dir * 20, by - 10, fbvx, fbvy));
+            g.level.fireballs.push(new Fireball(bx + g.level.boss.dir * 20, by - 10, Math.cos(angle) * 2.5, Math.sin(angle) * 1.5));
           }
           g.audio.fireBossSound();
         } else {
-          // 3 fireballs in a spread pattern (flower boss)
           for (let s = -1; s <= 1; s++) {
             const spreadAngle = Math.atan2(dy, dx) + s * 0.25;
-            const fbvx = Math.cos(spreadAngle) * CFG.FLOWER_FIREBALL_SPEED;
-            const fbvy = Math.sin(spreadAngle) * CFG.FLOWER_FIREBALL_SPEED;
-            g.level.fireballs.push(new Fireball(bx, by, fbvx, fbvy));
+            g.level.fireballs.push(new Fireball(bx, by, Math.cos(spreadAngle) * CFG.FLOWER_FIREBALL_SPEED, Math.sin(spreadAngle) * CFG.FLOWER_FIREBALL_SPEED));
           }
           g.audio.fireBossSound();
         }
       }
     }
 
-    // Spawn standing poop pile behind unicorn
-    if (g.player._spawnStandPoop) {
-      g.player._spawnStandPoop = false;
-      const spawnX = g.player.cx - g.player.facing * 20;
-      const spawnY = g.player.bottom - 20;
-      const poop = new Poop(spawnX, spawnY, 0, 0);
-      poop.fadeTime = 8.0;
-      g.level.poops.push(poop);
-      g.audio.formPoopSound(g.player);
-    }
-
-    // Spawn poop if player flagged it
-    if (g.player._spawnPoop) {
-      g.player._spawnPoop = false;
-      // Poop launches backwards (opposite of facing) and arcs up
-      const pvx = -g.player.facing * 1.5;
-      const pvy = -2.5;
-      const spawnX = g.player.cx - g.player.facing * 20;
-      const spawnY = g.player.bottom - 14;
-      const poop = new Poop(spawnX, spawnY, pvx, pvy);
-      g.level.poops.push(poop);
-      g.audio.formPoopSound(g.player);
-      g.particles.emit(PARTICLE_DUST, spawnX, spawnY, {
-        vx: -g.player.facing * 0.8, vy: -1, life: 0.3, size: 3, color: "#cc88ff", gravity: 0.02, friction: 0.9
-      });
+    // Spawn standing poop / poop / rainbow bolt for BOTH players
+    for (const p of players) {
+      if (!p.alive) continue;
+      if (p._spawnStandPoop) {
+        p._spawnStandPoop = false;
+        const poop = new Poop(p.cx - p.facing * 20, p.bottom - 20, 0, 0);
+        poop.fadeTime = 8.0;
+        g.level.poops.push(poop);
+        g.audio.formPoopSound(p);
+      }
+      if (p._spawnPoop) {
+        p._spawnPoop = false;
+        const pvx = -p.facing * 1.5;
+        const spawnX = p.cx - p.facing * 20;
+        const spawnY = p.bottom - 14;
+        g.level.poops.push(new Poop(spawnX, spawnY, pvx, -2.5));
+        g.audio.formPoopSound(p);
+        g.particles.emit(PARTICLE_DUST, spawnX, spawnY, {
+          vx: -p.facing * 0.8, vy: -1, life: 0.3, size: 3, color: "#cc88ff", gravity: 0.02, friction: 0.9
+        });
+      }
+      if (p._spawnRainbow) {
+        p._spawnRainbow = false;
+        const isKittySmall = (p.isKittycorn && !p.isUnderwater);
+        const isSmallUni = !p.isBig && !p.isMermaid && !p.isKittycorn && !p.isPixicorn && !p.isMouseicorn;
+        const hornOffsetX = isKittySmall ? 8 : (isSmallUni ? 12 : 16);
+        const hornOffsetY = isKittySmall ? (p.h * 0.3) : (isSmallUni ? 3 : 4);
+        const hornX = p.cx + p.facing * hornOffsetX;
+        const hornY = p.top + hornOffsetY;
+        g.level.rainbowBolts.push(new RainbowBolt(hornX, hornY, p.facing));
+        g.audio.rainbowShotSound();
+        g.particles.sparkleBurst(hornX, hornY, 5);
+      }
     }
 
     // Update poops
     for (let i = g.level.poops.length - 1; i >= 0; i--) {
       const p = g.level.poops[i];
-      if (p.alive) {
-        p.update(dt, g.level);
-      } else {
-        g.level.poops.splice(i, 1);
-      }
+      if (p.alive) p.update(dt, g.level); else g.level.poops.splice(i, 1);
     }
-
-    // Spawn rainbow bolt if player flagged it
-    if (g.player._spawnRainbow) {
-      g.player._spawnRainbow = false;
-      // Adjust spawn position for small forms
-      const isKittySmall = (g.player.isKittycorn && !g.player.isUnderwater);
-      const isSmallUni = !g.player.isBig && !g.player.isMermaid && !g.player.isKittycorn && !g.player.isPixicorn && !g.player.isMouseicorn;
-      const hornOffsetX = isKittySmall ? 8 : (isSmallUni ? 12 : 16);
-      const hornOffsetY = isKittySmall ? (g.player.h * 0.3) : (isSmallUni ? 3 : 4);
-      const hornX = g.player.cx + g.player.facing * hornOffsetX;
-      const hornY = g.player.top + hornOffsetY;
-      const bolt = new RainbowBolt(hornX, hornY, g.player.facing);
-      g.level.rainbowBolts.push(bolt);
-      g.audio.rainbowShotSound();
-      g.particles.sparkleBurst(hornX, hornY, 5);
-    }
-
     // Update rainbow bolts
     for (let i = g.level.rainbowBolts.length - 1; i >= 0; i--) {
       const rb = g.level.rainbowBolts[i];
-      if (rb.alive) {
-        rb.update(dt, g.level);
-      } else {
-        g.level.rainbowBolts.splice(i, 1);
-      }
+      if (rb.alive) rb.update(dt, g.level); else g.level.rainbowBolts.splice(i, 1);
     }
 
-    // Collision: rainbow bolts vs flies
-    for (const rb of g.level.rainbowBolts) {
-      if (!rb.alive) continue;
-      for (const fly of g.level.flies) {
-        if (!fly.alive) continue;
-        if (rb.overlaps(fly)) {
-          fly.alive = false;
-          rb.alive = false;
-          g.audio.collectSound();
-          g.particles.sparkleBurst(fly.cx, fly.cy, 12);
-          g.particles.floatingText(fly.cx, fly.cy - 10, "ZAP!", "#ff4488");
-          break;
+    // === Projectile vs enemy collisions (unchanged — bolts/poop are shared) ===
+    // Rainbow bolts vs enemies
+    const rbEnemyLists = [
+      [g.level.flies, "#ff4488", "ZAP!"],
+      [g.level.gnomes, "#ff4488", "ZAP!"],
+      [g.level.fish, "#ff4488", "ZAP!"],
+      [g.level.jellyfish, "#ff4488", "ZAP!"],
+      [g.level.narwhals, "#44ccff", "ZAP!"],
+      [g.level.birds, "#ff8844", "ZAP!"]
+    ];
+    for (const [enemies, color, text] of rbEnemyLists) {
+      for (const rb of g.level.rainbowBolts) {
+        if (!rb.alive) continue;
+        for (const enemy of enemies) {
+          if (!enemy.alive) continue;
+          if (rb.overlaps(enemy)) {
+            enemy.alive = false; rb.alive = false;
+            g.audio.collectSound();
+            g.particles.sparkleBurst(enemy.cx, enemy.cy, 12);
+            g.particles.floatingText(enemy.cx, enemy.cy - 10, text, color);
+            break;
+          }
         }
       }
     }
-
-    // Collision: rainbow bolts vs gnomes
-    for (const rb of g.level.rainbowBolts) {
-      if (!rb.alive) continue;
-      for (const gnome of g.level.gnomes) {
-        if (!gnome.alive) continue;
-        if (rb.overlaps(gnome)) {
-          gnome.alive = false;
-          rb.alive = false;
-          g.audio.collectSound();
-          g.particles.sparkleBurst(gnome.cx, gnome.cy, 12);
-          g.particles.floatingText(gnome.cx, gnome.cy - 10, "ZAP!", "#ff4488");
-          break;
+    // Poop vs enemies
+    const poopEnemyLists = [
+      [g.level.flies, "#cc88ff", "SPLAT!"],
+      [g.level.fish, "#44ccff", "SPLAT!"],
+      [g.level.jellyfish, "#cc88ff", "SPLAT!"],
+      [g.level.narwhals, "#44ccff", "SPLAT!"],
+      [g.level.birds, "#ff8844", "SPLAT!"],
+      [g.level.gnomes, "#cc88ff", "SPLAT!"]
+    ];
+    for (const [enemies, color, text] of poopEnemyLists) {
+      for (const poop of g.level.poops) {
+        if (!poop.alive || poop.landed) continue;
+        for (const enemy of enemies) {
+          if (!enemy.alive) continue;
+          if (poop.overlaps(enemy)) {
+            enemy.alive = false; poop.alive = false;
+            g.audio.collectSound();
+            g.particles.impactBurst(enemy.cx, enemy.cy, 8, color);
+            g.particles.floatingText(enemy.cx, enemy.cy - 10, text, color);
+            break;
+          }
         }
       }
     }
-
-    // Collision: rainbow bolts vs fish
-    for (const rb of g.level.rainbowBolts) {
-      if (!rb.alive) continue;
-      for (const fish of g.level.fish) {
-        if (!fish.alive) continue;
-        if (rb.overlaps(fish)) {
-          fish.alive = false;
-          rb.alive = false;
-          g.audio.collectSound();
-          g.particles.sparkleBurst(fish.cx, fish.cy, 12);
-          g.particles.floatingText(fish.cx, fish.cy - 10, "ZAP!", "#ff4488");
-          break;
-        }
-      }
-    }
-
-    // Collision: rainbow bolts vs jellyfish
-    for (const rb of g.level.rainbowBolts) {
-      if (!rb.alive) continue;
-      for (const jelly of g.level.jellyfish) {
-        if (!jelly.alive) continue;
-        if (rb.overlaps(jelly)) {
-          jelly.alive = false;
-          rb.alive = false;
-          g.audio.collectSound();
-          g.particles.sparkleBurst(jelly.cx, jelly.cy, 12);
-          g.particles.floatingText(jelly.cx, jelly.cy - 10, "ZAP!", "#ff4488");
-          break;
-        }
-      }
-    }
-
-    // Collision: rainbow bolts vs narwhals
-    for (const rb of g.level.rainbowBolts) {
-      if (!rb.alive) continue;
-      for (const nw of g.level.narwhals) {
-        if (!nw.alive) continue;
-        if (rb.overlaps(nw)) {
-          nw.alive = false;
-          rb.alive = false;
-          g.audio.collectSound();
-          g.particles.sparkleBurst(nw.cx, nw.cy, 12);
-          g.particles.floatingText(nw.cx, nw.cy - 10, "ZAP!", "#44ccff");
-          break;
-        }
-      }
-    }
-
-    // Collision: rainbow bolts vs birds
-    for (const rb of g.level.rainbowBolts) {
-      if (!rb.alive) continue;
-      for (const bird of g.level.birds) {
-        if (!bird.alive) continue;
-        if (rb.overlaps(bird)) {
-          bird.alive = false;
-          rb.alive = false;
-          g.audio.collectSound();
-          g.particles.sparkleBurst(bird.cx, bird.cy, 12);
-          g.particles.floatingText(bird.cx, bird.cy - 10, "ZAP!", "#ff8844");
-          break;
-        }
-      }
-    }
-
-    // Collision: poop vs flies
-    for (const poop of g.level.poops) {
-      if (!poop.alive || poop.landed) continue;
-      for (const fly of g.level.flies) {
-        if (!fly.alive) continue;
-        if (poop.overlaps(fly)) {
-          fly.alive = false;
-          poop.alive = false;
-          g.audio.collectSound();
-          g.particles.impactBurst(fly.cx, fly.cy, 10, "#cc88ff");
-          g.particles.floatingText(fly.cx, fly.cy - 10, "SPLAT!", "#cc88ff");
-          break;
-        }
-      }
-    }
-
-    // Collision: player vs wing crystals
-    for (const wc of g.level.wingCrystals) {
-      if (!wc.alive || wc.collected) continue;
-      if (g.player.overlapsPad(wc, -4, -4)) {
-        wc.collected = true;
-        wc.alive = false;
-        if (!g.player.hasWings) {
-          g.player.collectWings(g.audio, g.particles);
-        } else {
-          g.audio.collectSound();
-          g.particles.sparkleBurst(wc.cx, wc.cy, 6);
-        }
-      }
-    }
-
-    // Collision: player vs stars
-    for (const star of g.level.stars) {
-      if (!star.alive || star.collected) continue;
-      if (g.player.overlapsPad(star, -4, -4)) {
-        star.collect();
-        g.player.stars++;
-        g.audio.collectSound();
-        g.particles.sparkleBurst(star.cx, star.cy, 12);
-        g.particles.floatingText(star.cx, star.cy - 10, "+1", "#ffff44");
-        // Every 5 stars = rainbow shooter
-        if (g.player.stars % 5 === 0 && !g.player.hasRainbow) {
-          g.player.hasRainbow = true;
-          g.particles.sparkleBurst(g.player.cx, g.player.cy, 20);
-          g.particles.floatingText(g.player.cx, g.player.cy - 20, "RAINBOW POWER!", "#ff4488");
-        }
-      }
-    }
-
-    // Collision: player vs flies
-    for (const fly of g.level.flies) {
-      if (!fly.alive || !g.player.alive) continue;
-      if (g.player.overlapsPad(fly, -8, 2)) {
-        // Check if player is stomping (falling onto fly) — wide hooves
-        if (g.player.vy > 0 && g.player.bottom - 8 < fly.cy) {
-          fly.alive = false;
-          g.player.vy = CFG.JUMP_FORCE * 0.6;
-          g.audio.collectSound();
-          g.particles.impactBurst(fly.cx, fly.cy, 8, "#8888ff");
-          g.particles.floatingText(fly.cx, fly.cy - 10, "SQUISH!", "#88aaff");
-        } else {
-          g.player.hurt(g.particles, g.audio);
-        }
-      }
-    }
-
-    // Collision: player vs gnomes
-    for (const gnome of g.level.gnomes) {
-      if (!gnome.alive || !g.player.alive) continue;
-      if (g.player.overlapsPad(gnome, -8, 2)) {
-        if (g.player.vy > 0 && g.player.bottom - 8 < gnome.cy) {
-          gnome.alive = false;
-          g.player.vy = CFG.JUMP_FORCE * 0.6;
-          g.audio.collectSound();
-          g.particles.impactBurst(gnome.cx, gnome.cy, 8, "#cc4444");
-          g.particles.floatingText(gnome.cx, gnome.cy - 10, "BONK!", "#ff4444");
-        } else {
-          g.player.hurt(g.particles, g.audio);
-        }
-      }
-    }
-
-    // Collision: player vs fish
-    for (const fish of g.level.fish) {
-      if (!fish.alive || !g.player.alive) continue;
-      if (g.player.overlapsPad(fish, -6, 2)) {
-        if (g.player.vy > 0 && g.player.bottom - 6 < fish.cy) {
-          fish.alive = false;
-          g.player.vy = CFG.JUMP_FORCE * 0.5;
-          g.audio.collectSound();
-          g.particles.impactBurst(fish.cx, fish.cy, 8, "#44aaff");
-          g.particles.floatingText(fish.cx, fish.cy - 10, "SPLASH!", "#44ccff");
-        } else {
-          g.player.hurt(g.particles, g.audio);
-        }
-      }
-    }
-
-    // Collision: player vs jellyfish
-    for (const jelly of g.level.jellyfish) {
-      if (!jelly.alive || !g.player.alive) continue;
-      if (g.player.overlapsPad(jelly, -4, 2)) {
-        if (g.player.vy > 0 && g.player.bottom - 6 < jelly.cy) {
-          jelly.alive = false;
-          g.player.vy = CFG.JUMP_FORCE * 0.5;
-          g.audio.collectSound();
-          g.particles.impactBurst(jelly.cx, jelly.cy, 10, "#cc88ff");
-          g.particles.floatingText(jelly.cx, jelly.cy - 10, "ZAP!", "#ff88cc");
-        } else {
-          g.player.hurt(g.particles, g.audio);
-        }
-      }
-    }
-
-    // Collision: player vs narwhals
-    for (const nw of g.level.narwhals) {
-      if (!nw.alive || !g.player.alive) continue;
-      if (g.player.overlapsPad(nw, -4, 2)) {
-        if (g.player.vy > 0 && g.player.bottom - 6 < nw.cy) {
-          nw.alive = false;
-          g.player.vy = CFG.JUMP_FORCE * 0.5;
-          g.audio.collectSound();
-          g.particles.impactBurst(nw.cx, nw.cy, 8, "#44ccff");
-          g.particles.floatingText(nw.cx, nw.cy - 10, "BONK!", "#44ccff");
-        } else {
-          g.player.hurt(g.particles, g.audio);
-        }
-      }
-    }
-
-    // Collision: player vs birds
-    for (const bird of g.level.birds) {
-      if (!bird.alive || !g.player.alive) continue;
-      if (g.player.overlapsPad(bird, -4, 2)) {
-        if (g.player.vy > 0 && g.player.bottom - 6 < bird.cy) {
-          bird.alive = false;
-          g.player.vy = CFG.JUMP_FORCE * 0.5;
-          g.audio.collectSound();
-          g.particles.impactBurst(bird.cx, bird.cy, 8, "#ff8844");
-          g.particles.floatingText(bird.cx, bird.cy - 10, "SQUAWK!", "#ff8844");
-        } else {
-          g.player.hurt(g.particles, g.audio);
-        }
-      }
-    }
-
-    // Collision: player vs mermaid gems
-    for (const mg of g.level.mermaidGems) {
-      if (!mg.alive || mg.collected || !g.player.alive) continue;
-      if (g.player.overlaps(mg)) {
-        mg.collected = true;
-        if (!g.player.isMermaid) {
-          g.player.collectMermaid(g.particles, g.audio);
-        } else {
-          g.audio.collectSound();
-          g.particles.sparkleBurst(mg.cx, mg.cy, 6);
-        }
-      }
-    }
-
-    // Collision: player vs kittycorn gems
-    for (const kg of g.level.kittycornGems) {
-      if (!kg.alive || kg.collected || !g.player.alive) continue;
-      if (g.player.overlaps(kg)) {
-        kg.collected = true;
-        if (!g.player.isKittycorn) {
-          g.player.collectKittycorn(g.particles, g.audio);
-        } else {
-          g.audio.collectSound();
-          g.particles.sparkleBurst(kg.cx, kg.cy, 6);
-        }
-      }
-    }
-
-    // Collision: player vs pixicorn gems
-    for (const pg of g.level.pixicornGems) {
-      if (!pg.alive || pg.collected || !g.player.alive) continue;
-      if (g.player.overlaps(pg)) {
-        pg.collected = true;
-        if (!g.player.isPixicorn) {
-          g.player.collectPixicorn(g.particles, g.audio);
-        } else {
-          g.audio.collectSound();
-          g.particles.sparkleBurst(pg.cx, pg.cy, 6);
-        }
-      }
-    }
-
-    // Collision: player vs mousicorn gems
-    for (const mg of g.level.mousicornGems) {
-      if (!mg.alive || mg.collected || !g.player.alive) continue;
-      if (g.player.overlaps(mg)) {
-        mg.collected = true;
-        if (!g.player.isMouseicorn) {
-          g.player.collectMouseicorn(g.particles, g.audio);
-        } else {
-          g.audio.collectSound();
-          g.particles.sparkleBurst(mg.cx, mg.cy, 6);
-        }
-      }
-    }
-
-    // Collision: player vs form gates (proximity-based "recognition")
-    for (const gate of g.level.formGates) {
-      if (gate.isOpen()) continue;
-      if (gate.opened) continue; // already opening
-      // Sense range: open when player is within 2 tiles horizontally
-      const senseRange = CFG.TILE * 2;
-      const dx = Math.abs(g.player.cx - gate.cx);
-      const dy = Math.abs(g.player.cy - gate.cy);
-      const inRange = dx < senseRange && dy < gate.h;
-      const touching = g.player.overlaps(gate);
-      const hasForm =
-        gate.requiredForm === "mousicorn" ? g.player.isMouseicorn :
-        gate.requiredForm === "kittycorn" ? g.player.isKittycorn :
-        gate.requiredForm === "pixicorn" ? g.player.isPixicorn :
-        gate.requiredForm === "mermaid" ? g.player.isMermaid : false;
-      if ((inRange || touching) && hasForm) {
-        gate.opened = true;
-        g.audio.collectSound();
-        g.particles.sparkleBurst(gate.cx, gate.cy, 30);
-        // Clear the wall tiles for the gate
-        const T = CFG.TILE;
-        const gateCol = Math.floor(gate.x / T);
-        const gateTopRow = Math.floor(gate.y / T);
-        const gateRows = Math.ceil(gate.h / T);
-        for (let r = gateTopRow; r < gateTopRow + gateRows; r++) {
-          g.level.set(gateCol, r, TILE_EMPTY);
-          g.level.set(gateCol + 1, r, TILE_EMPTY);
-        }
-      } else if (touching && !hasForm) {
-        // Block player (push back)
-        g.player.x = gate.x - g.player.w - 1;
-        g.player.vx = 0;
-        // Show hint text (throttle to avoid spam)
-        if (!gate._hintTimer || gate._hintTimer <= 0) {
-          g.particles.floatingText(gate.cx, gate.y - 10,
-            "Need " + gate.requiredForm.toUpperCase() + "!", "#ffaa00");
-          gate._hintTimer = 1.5;
-        } else {
-          gate._hintTimer -= dt;
-        }
-      }
-    }
-
-    // Collision: player vs fireballs
-    for (const fb of g.level.fireballs) {
-      if (!fb.alive || !g.player.alive) continue;
-      if (g.player.overlaps(fb)) {
-        g.player.hurt(g.particles, g.audio);
-        fb.alive = false;
-      }
-    }
-
-    // Collision: poop vs fireballs
+    // Poop vs fireballs
     for (const poop of g.level.poops) {
       if (!poop.alive || poop.landed) continue;
       for (const fb of g.level.fireballs) {
@@ -10252,88 +10398,7 @@ class GameStateMachine {
         }
       }
     }
-
-    // Collision: poop vs fish
-    for (const poop of g.level.poops) {
-      if (!poop.alive || poop.landed) continue;
-      for (const fish of g.level.fish) {
-        if (!fish.alive) continue;
-        if (poop.overlaps(fish)) {
-          fish.alive = false;
-          poop.alive = false;
-          g.audio.collectSound();
-          g.particles.impactBurst(fish.cx, fish.cy, 8, "#44aaff");
-          g.particles.floatingText(fish.cx, fish.cy - 10, "SPLAT!", "#44ccff");
-          break;
-        }
-      }
-    }
-
-    // Collision: poop vs jellyfish
-    for (const poop of g.level.poops) {
-      if (!poop.alive || poop.landed) continue;
-      for (const jelly of g.level.jellyfish) {
-        if (!jelly.alive) continue;
-        if (poop.overlaps(jelly)) {
-          jelly.alive = false;
-          poop.alive = false;
-          g.audio.collectSound();
-          g.particles.impactBurst(jelly.cx, jelly.cy, 8, "#cc88ff");
-          g.particles.floatingText(jelly.cx, jelly.cy - 10, "SPLAT!", "#cc88ff");
-          break;
-        }
-      }
-    }
-
-    // Collision: poop vs narwhals
-    for (const poop of g.level.poops) {
-      if (!poop.alive || poop.landed) continue;
-      for (const nw of g.level.narwhals) {
-        if (!nw.alive) continue;
-        if (poop.overlaps(nw)) {
-          nw.alive = false;
-          poop.alive = false;
-          g.audio.collectSound();
-          g.particles.impactBurst(nw.cx, nw.cy, 8, "#44ccff");
-          g.particles.floatingText(nw.cx, nw.cy - 10, "SPLAT!", "#44ccff");
-          break;
-        }
-      }
-    }
-
-    // Collision: poop vs birds
-    for (const poop of g.level.poops) {
-      if (!poop.alive || poop.landed) continue;
-      for (const bird of g.level.birds) {
-        if (!bird.alive) continue;
-        if (poop.overlaps(bird)) {
-          bird.alive = false;
-          poop.alive = false;
-          g.audio.collectSound();
-          g.particles.impactBurst(bird.cx, bird.cy, 8, "#ff8844");
-          g.particles.floatingText(bird.cx, bird.cy - 10, "SPLAT!", "#ff8844");
-          break;
-        }
-      }
-    }
-
-    // Collision: poop vs gnomes
-    for (const poop of g.level.poops) {
-      if (!poop.alive || poop.landed) continue;
-      for (const gnome of g.level.gnomes) {
-        if (!gnome.alive) continue;
-        if (poop.overlaps(gnome)) {
-          gnome.alive = false;
-          poop.alive = false;
-          g.audio.collectSound();
-          g.particles.impactBurst(gnome.cx, gnome.cy, 10, "#cc88ff");
-          g.particles.floatingText(gnome.cx, gnome.cy - 10, "SPLAT!", "#cc88ff");
-          break;
-        }
-      }
-    }
-
-    // Collision: poop vs dead flowers (revive them)
+    // Poop vs dead flowers (revive — credit to nearest alive player)
     for (const poop of g.level.poops) {
       if (!poop.alive) continue;
       for (const df of g.level.deadFlowers) {
@@ -10342,32 +10407,34 @@ class GameStateMachine {
           df.revived = true;
           df.reviveTimer = 0;
           poop.alive = false;
-          g.player.flowersRevived++;
-          g.player.flowersForRainbow++;
+          // Credit nearest alive player
+          let creditP = activePlayers[0] || g.player;
+          for (const ap of activePlayers) {
+            if (Math.abs(ap.cx - df.cx) < Math.abs(creditP.cx - df.cx)) creditP = ap;
+          }
+          creditP.flowersRevived++;
+          creditP.flowersForRainbow++;
           g.audio.flowerBloomSound();
           g.particles.sparkleBurst(df.cx, df.cy, 10);
           g.particles.floatingText(df.cx, df.cy - 12, "BLOOM!", "#ff88cc");
-          // Check for rainbow power
-          if (g.player.flowersForRainbow >= CFG.FLOWERS_FOR_RAINBOW && !g.player.hasRainbow) {
-            g.player.hasRainbow = true;
-            g.particles.sparkleBurst(g.player.cx, g.player.cy, 20);
-            g.particles.floatingText(g.player.cx, g.player.cy - 20, "RAINBOW POWER!", "#ff4488");
+          if (creditP.flowersForRainbow >= CFG.FLOWERS_FOR_RAINBOW && !creditP.hasRainbow) {
+            creditP.hasRainbow = true;
+            g.particles.sparkleBurst(creditP.cx, creditP.cy, 20);
+            g.particles.floatingText(creditP.cx, creditP.cy - 20, "RAINBOW POWER!", "#ff4488");
           }
-          // Check for extra life at 20 flowers
-          if (g.player.flowersRevived >= CFG.FLOWERS_FOR_LIFE) {
-            g.player.lives++;
-            g.player.flowersRevived = 0;
-            g.player.flowersForRainbow = 0;
+          if (creditP.flowersRevived >= CFG.FLOWERS_FOR_LIFE) {
+            g.sharedLives++;
+            creditP.flowersRevived = 0;
+            creditP.flowersForRainbow = 0;
             g.audio.extraLifeSound();
-            g.particles.sparkleBurst(g.player.cx, g.player.cy, 30);
-            g.particles.floatingText(g.player.cx, g.player.cy - 20, "1UP!", "#44ff44");
+            g.particles.sparkleBurst(creditP.cx, creditP.cy, 30);
+            g.particles.floatingText(creditP.cx, creditP.cy - 20, "1UP!", "#44ff44");
           }
           break;
         }
       }
     }
-
-    // Collision: poop vs black flowers (spawn hay bale, or free life if already big)
+    // Poop vs black flowers
     for (const poop of g.level.poops) {
       if (!poop.alive) continue;
       for (const bf of g.level.blackFlowers) {
@@ -10376,111 +10443,248 @@ class GameStateMachine {
           bf.used = true;
           poop.alive = false;
           g.audio.flowerBloomSound();
-          if (g.player.isBig) {
-            // Already big — free life with rainbow effect!
-            g.player.lives++;
+          // Check nearest alive player for isBig
+          let creditP = activePlayers[0] || g.player;
+          for (const ap of activePlayers) {
+            if (Math.abs(ap.cx - bf.cx) < Math.abs(creditP.cx - bf.cx)) creditP = ap;
+          }
+          if (creditP.isBig) {
+            g.sharedLives++;
             g.audio.extraLifeSound();
             g.particles.sparkleBurst(bf.cx, bf.cy, 20);
             g.particles.floatingText(bf.cx, bf.cy - 12, "1UP!", "#00ff88");
-            // Rainbow burst
             const colors = ["#ff0000","#ff8800","#ffff00","#00ff00","#0088ff","#8800ff"];
-            for (const clr of colors) {
-              g.particles.impactBurst(bf.cx, bf.cy, 4, clr);
-            }
+            for (const clr of colors) g.particles.impactBurst(bf.cx, bf.cy, 4, clr);
           } else {
-            // Not big yet — spawn hay bale
             g.particles.impactBurst(bf.cx, bf.cy, 8, "#8800aa");
-            const hb = new HayBale(bf.cx - 8, bf.cy - 20);
-            g.level.hayBales.push(hb);
+            g.level.hayBales.push(new HayBale(bf.cx - 8, bf.cy - 20));
           }
           break;
         }
       }
     }
-
-    // Collision: player vs hay bales (grow big, or 1-UP if already big)
-    for (const hb of g.level.hayBales) {
-      if (!hb.alive) continue;
-      if (g.player.overlaps(hb)) {
-        hb.alive = false;
-        if (!g.player.isBig) {
-          g.player.isBig = true;
-          g.audio.growBigSound();
-          g.player.growBigTimer = CFG.GROW_BIG_DURATION;
-          g.player.invTimer = CFG.GROW_BIG_DURATION;
-          g.particles.sparkleBurst(g.player.cx, g.player.cy, 15);
-          g.particles.floatingText(g.player.cx, g.player.cy - 20, "BIG!", "#daa520");
-        } else {
-          // Already big — 1-UP!
-          g.player.lives++;
-          g.audio.extraLifeSound();
-          g.particles.sparkleBurst(g.player.cx, g.player.cy, 20);
-          g.particles.floatingText(g.player.cx, g.player.cy - 20, "1UP!", "#00ff88");
-          const colors = ["#ff0000","#ff8800","#ffff00","#00ff00","#0088ff","#8800ff"];
-          for (const clr of colors) {
-            g.particles.impactBurst(g.player.cx, g.player.cy, 4, clr);
-          }
-        }
-      }
-    }
-
-    // Collision: poop vs boss
+    // Poop/rainbow vs boss
     if (g.level.boss && g.level.boss.alive && !g.level.boss.defeated) {
       for (const poop of g.level.poops) {
         if (!poop.alive || poop.landed) continue;
-        if (poop.overlaps(g.level.boss)) {
-          g.level.boss.hit(g.particles, g.audio);
-          poop.alive = false;
-          break;
-        }
+        if (poop.overlaps(g.level.boss)) { g.level.boss.hit(g.particles, g.audio); poop.alive = false; break; }
       }
-    }
-
-    // Collision: rainbow bolts vs boss
-    if (g.level.boss && g.level.boss.alive && !g.level.boss.defeated) {
       for (const rb of g.level.rainbowBolts) {
         if (!rb.alive) continue;
-        if (rb.overlaps(g.level.boss)) {
-          g.level.boss.hit(g.particles, g.audio);
-          rb.alive = false;
-          break;
-        }
+        if (rb.overlaps(g.level.boss)) { g.level.boss.hit(g.particles, g.audio); rb.alive = false; break; }
       }
     }
 
-    // Collision: player vs boss
-    if (g.level.boss && g.level.boss.alive && !g.level.boss.defeated && g.player.alive) {
-      if (g.player.overlapsPad(g.level.boss, -4, 2)) {
-        // Stomping boss?
-        if (g.player.vy > 0 && g.player.bottom - 8 < g.level.boss.cy) {
-          g.level.boss.hit(g.particles, g.audio);
-          g.player.vy = CFG.JUMP_FORCE * 0.7;
-        } else if (g.level.boss.invTimer <= 0) {
-          g.player.hurt(g.particles, g.audio);
+    // === PLAYER vs WORLD collisions (for BOTH players) ===
+    for (const pl of activePlayers) {
+      // Player vs wing crystals
+      for (const wc of g.level.wingCrystals) {
+        if (!wc.alive || wc.collected) continue;
+        if (pl.overlapsPad(wc, -4, -4)) {
+          wc.collected = true; wc.alive = false;
+          if (!pl.hasWings) pl.collectWings(g.audio, g.particles);
+          else { g.audio.collectSound(); g.particles.sparkleBurst(wc.cx, wc.cy, 6); }
         }
+      }
+      // Player vs stars
+      for (const star of g.level.stars) {
+        if (!star.alive || star.collected) continue;
+        if (pl.overlapsPad(star, -4, -4)) {
+          star.collect(); pl.stars++;
+          g.audio.collectSound();
+          g.particles.sparkleBurst(star.cx, star.cy, 12);
+          g.particles.floatingText(star.cx, star.cy - 10, "+1", "#ffff44");
+          if (pl.stars % 5 === 0 && !pl.hasRainbow) {
+            pl.hasRainbow = true;
+            g.particles.sparkleBurst(pl.cx, pl.cy, 20);
+            g.particles.floatingText(pl.cx, pl.cy - 20, "RAINBOW POWER!", "#ff4488");
+          }
+        }
+      }
+      // Player vs stomp enemies (flies, gnomes, fish, jellyfish, narwhals, birds)
+      const stompEnemies = [
+        [g.level.flies, -8, 2, 0.6, "#8888ff", "SQUISH!"],
+        [g.level.gnomes, -8, 2, 0.6, "#cc4444", "BONK!"],
+        [g.level.fish, -6, 2, 0.5, "#44aaff", "SPLASH!"],
+        [g.level.jellyfish, -4, 2, 0.5, "#cc88ff", "ZAP!"],
+        [g.level.narwhals, -4, 2, 0.5, "#44ccff", "BONK!"],
+        [g.level.birds, -4, 2, 0.5, "#ff8844", "SQUAWK!"]
+      ];
+      for (const [enemies, padX, padY, bounce, color, text] of stompEnemies) {
+        for (const enemy of enemies) {
+          if (!enemy.alive || !pl.alive) continue;
+          if (pl.overlapsPad(enemy, padX, padY)) {
+            if (pl.vy > 0 && pl.bottom - 8 < enemy.cy) {
+              enemy.alive = false;
+              pl.vy = CFG.JUMP_FORCE * bounce;
+              g.audio.collectSound();
+              g.particles.impactBurst(enemy.cx, enemy.cy, 8, color);
+              g.particles.floatingText(enemy.cx, enemy.cy - 10, text, color);
+            } else {
+              pl.hurt(g.particles, g.audio);
+            }
+          }
+        }
+      }
+      // Player vs form gems
+      const formGems = [
+        [g.level.mermaidGems, "isMermaid", "collectMermaid"],
+        [g.level.kittycornGems, "isKittycorn", "collectKittycorn"],
+        [g.level.pixicornGems, "isPixicorn", "collectPixicorn"],
+        [g.level.mousicornGems, "isMouseicorn", "collectMouseicorn"]
+      ];
+      for (const [gems, formProp, collectMethod] of formGems) {
+        for (const gem of gems) {
+          if (!gem.alive || gem.collected || !pl.alive) continue;
+          if (pl.overlaps(gem)) {
+            gem.collected = true;
+            if (!pl[formProp]) pl[collectMethod](g.particles, g.audio);
+            else { g.audio.collectSound(); g.particles.sparkleBurst(gem.cx, gem.cy, 6); }
+          }
+        }
+      }
+      // Player vs form gates
+      for (const gate of g.level.formGates) {
+        if (gate.isOpen() || gate.opened) continue;
+        const senseRange = CFG.TILE * 2;
+        const gdx = Math.abs(pl.cx - gate.cx);
+        const gdy = Math.abs(pl.cy - gate.cy);
+        const inRange = gdx < senseRange && gdy < gate.h;
+        const touching = pl.overlaps(gate);
+        const hasForm =
+          gate.requiredForm === "mousicorn" ? pl.isMouseicorn :
+          gate.requiredForm === "kittycorn" ? pl.isKittycorn :
+          gate.requiredForm === "pixicorn" ? pl.isPixicorn :
+          gate.requiredForm === "mermaid" ? pl.isMermaid : false;
+        if ((inRange || touching) && hasForm) {
+          gate.opened = true;
+          g.audio.collectSound();
+          g.particles.sparkleBurst(gate.cx, gate.cy, 30);
+          const T = CFG.TILE;
+          const gateCol = Math.floor(gate.x / T);
+          const gateTopRow = Math.floor(gate.y / T);
+          const gateRows = Math.ceil(gate.h / T);
+          for (let r = gateTopRow; r < gateTopRow + gateRows; r++) {
+            g.level.set(gateCol, r, TILE_EMPTY);
+            g.level.set(gateCol + 1, r, TILE_EMPTY);
+          }
+        } else if (touching && !hasForm) {
+          pl.x = gate.x - pl.w - 1;
+          pl.vx = 0;
+          if (!gate._hintTimer || gate._hintTimer <= 0) {
+            g.particles.floatingText(gate.cx, gate.y - 10,
+              "Need " + gate.requiredForm.toUpperCase() + "!", "#ffaa00");
+            gate._hintTimer = 1.5;
+          } else { gate._hintTimer -= dt; }
+        }
+      }
+      // Player vs fireballs
+      for (const fb of g.level.fireballs) {
+        if (!fb.alive || !pl.alive) continue;
+        if (pl.overlaps(fb)) { pl.hurt(g.particles, g.audio); fb.alive = false; }
+      }
+      // Player vs hay bales
+      for (const hb of g.level.hayBales) {
+        if (!hb.alive || !pl.alive) continue;
+        if (pl.overlaps(hb)) {
+          hb.alive = false;
+          if (!pl.isBig) {
+            pl.isBig = true;
+            g.audio.growBigSound();
+            pl.growBigTimer = CFG.GROW_BIG_DURATION;
+            pl.invTimer = CFG.GROW_BIG_DURATION;
+            g.particles.sparkleBurst(pl.cx, pl.cy, 15);
+            g.particles.floatingText(pl.cx, pl.cy - 20, "BIG!", "#daa520");
+          } else {
+            g.sharedLives++;
+            g.audio.extraLifeSound();
+            g.particles.sparkleBurst(pl.cx, pl.cy, 20);
+            g.particles.floatingText(pl.cx, pl.cy - 20, "1UP!", "#00ff88");
+            const colors = ["#ff0000","#ff8800","#ffff00","#00ff00","#0088ff","#8800ff"];
+            for (const clr of colors) g.particles.impactBurst(pl.cx, pl.cy, 4, clr);
+          }
+        }
+      }
+      // Player vs boss
+      if (g.level.boss && g.level.boss.alive && !g.level.boss.defeated && pl.alive) {
+        if (pl.overlapsPad(g.level.boss, -4, 2)) {
+          if (pl.vy > 0 && pl.bottom - 8 < g.level.boss.cy) {
+            g.level.boss.hit(g.particles, g.audio);
+            pl.vy = CFG.JUMP_FORCE * 0.7;
+          } else if (g.level.boss.invTimer <= 0) {
+            pl.hurt(g.particles, g.audio);
+          }
+        }
+      }
+      // Player vs hoop
+      if (g.level.hoop && g.level.hoop.alive && pl.overlaps(g.level.hoop)) {
+        g.audio.hoopSound();
+        g.particles.sparkleBurst(g.level.hoop.cx, g.level.hoop.cy, 20);
+        // Both alive players celebrate
+        for (const cp of activePlayers) {
+          cp.animState = "hoopClear";
+          cp.animFrame = 0;
+          cp.animTimer = 0;
+          cp.speedX = 0;
+          cp.vx = 0;
+        }
+        g._completingPlayer = pl;
+        this.setState(STATE_COMPLETE);
+        break; // only trigger once
       }
     }
 
-    // Collision: player vs hoop
-    if (g.level.hoop && g.level.hoop.alive && g.player.overlaps(g.level.hoop)) {
-      g.audio.hoopSound();
-      g.particles.sparkleBurst(g.level.hoop.cx, g.level.hoop.cy, 20);
-      g.player.animState = "hoopClear";
-      g.player.animFrame = 0;
-      g.player.animTimer = 0;
-      g.player.speedX = 0;
-      g.player.vx = 0;
-      this.setState(STATE_COMPLETE);
+    // === Co-op death/respawn handling ===
+    for (const p of players) {
+      if (!p.alive && !p._deathHandled) {
+        p._deathHandled = true;
+        g.sharedLives--;
+        const other = (p === g.player) ? g.player2 : g.player;
+        if (other.alive && g.sharedLives >= 0) {
+          // Other player is alive — start respawn timer
+          p.respawnTimer = 2.0;
+          if (p._deathType === "fall") g.audio.fallDeathSound();
+          else g.audio.deathSound();
+        }
+      }
     }
-
-    // Player died
-    if (!g.player.alive) {
+    // Respawn timers
+    for (const p of players) {
+      if (!p.alive && p.respawnTimer > 0) {
+        p.respawnTimer -= dt;
+        if (p.respawnTimer <= 0) {
+          const other = (p === g.player) ? g.player2 : g.player;
+          if (other.alive) {
+            p.reset(other.cx + 30, other.y);
+            p._deathHandled = false;
+          } else {
+            // Other also dead — level restart will handle it
+            p.respawnTimer = 0;
+          }
+        }
+      }
+    }
+    // All active players dead = STATE_DYING
+    const p2Dead = !g.p2Active || (!g.player2.alive && g.player2.respawnTimer <= 0);
+    if (!g.player.alive && g.player.respawnTimer <= 0 && p2Dead) {
       this.deathTimer = 0;
       this.setState(STATE_DYING);
     }
 
-    // Camera
-    g.camera.follow(g.player.cx, g.player.cy, g.player.facing, dt);
+    // Camera — follow active players
+    g.camera.followDuo(
+      g.player.cx, g.player.cy, g.player.alive,
+      g.player2.cx, g.player2.cy, g.p2Active && g.player2.alive, dt
+    );
+
+    // Screen-edge clamp: neither player can leave the visible screen
+    for (const p of players) {
+      if (!p.alive) continue;
+      const minX = g.camera.x;
+      const maxX = g.camera.x + CFG.W - p.w;
+      if (p.x < minX) { p.x = minX; if (p.speedX < 0) p.speedX = 0; }
+      if (p.x > maxX) { p.x = maxX; if (p.speedX > 0) p.speedX = 0; }
+    }
 
     // Particles
     g.particles.update(dt);
@@ -10489,7 +10693,7 @@ class GameStateMachine {
     this.deathTimer += dt;
     this.game.particles.update(dt);
     if (this.deathTimer > 1.5) {
-      if (this.game.player.lives > 0) {
+      if (this.game.sharedLives >= 0) {
         // Restart current level from beginning (keep power-ups and lives)
         this.game.startLevel(false);
         this.setState(STATE_PLAYING);
@@ -10504,16 +10708,17 @@ class GameStateMachine {
     const g = this.game;
     g.particles.update(dt);
 
-    // Animate hoop clear sprite: play frames 0-5, then cycle 4-5 for sparkle
-    const p = g.player;
-    if (p.animState === "hoopClear") {
-      p.animTimer += dt;
-      if (p.animTimer > 0.15) {
-        p.animTimer = 0;
-        if (p.animFrame < 5) {
-          p.animFrame++;
-        } else {
-          p.animFrame = p.animFrame === 5 ? 4 : 5;
+    // Animate hoop clear sprite for both players
+    for (const p of g.players) {
+      if (p.animState === "hoopClear") {
+        p.animTimer += dt;
+        if (p.animTimer > 0.15) {
+          p.animTimer = 0;
+          if (p.animFrame < 5) {
+            p.animFrame++;
+          } else {
+            p.animFrame = p.animFrame === 5 ? 4 : 5;
+          }
         }
       }
     }
@@ -10523,20 +10728,219 @@ class GameStateMachine {
     const nextIdx = g.currentLevelIndex + 1;
     const isGameComplete = nextIdx >= LEVEL_DEFS.length;
 
-    // Auto-advance after world boss (5s to read save code), or Enter to skip
+    // Either player's Enter advances
     const autoAdvance = isBossLevel && !isGameComplete && this.stateTimer > 5.0;
-    const manualAdvance = g.input.enter && this.stateTimer > 1.0;
+    const manualAdvance = (g.input.enter || g.input2.enter) && this.stateTimer > 1.0;
 
     if (autoAdvance || manualAdvance) {
       g.audio.menuSelect();
-      if (!isGameComplete) {
+      if (isGameComplete) {
+        // Epilogue story
+        this.triggerStory(8);
+      } else if (isBossLevel) {
+        // Advance level index, then show story (story _endStory will call startLevel)
         g.currentLevelIndex = nextIdx;
-        g.startLevel(false); // keep power-ups
-        this.setState(STATE_LEVEL_INTRO);
+        const completedWorld = def.world;
+        if (!this.triggerStory(completedWorld)) {
+          // No story for this world — just go to next level
+          g.startLevel(false);
+          this.setState(STATE_LEVEL_INTRO);
+        }
       } else {
-        // All worlds complete! Back to title
-        this.setState(STATE_TITLE);
+        // Non-boss level — go directly to next level
+        g.currentLevelIndex = nextIdx;
+        g.startLevel(false);
+        this.setState(STATE_LEVEL_INTRO);
       }
+    }
+  }
+
+  // --- Player Select ---
+  updatePlayerSelect(dt) {
+    const g = this.game;
+    const anyUp = g.input.pressed("ArrowUp") || g.input2.pressed("ArrowUp");
+    const anyDown = g.input.pressed("ArrowDown") || g.input2.pressed("ArrowDown");
+    const anyEnter = g.input.pressed("Enter") || g.input2.pressed("Enter");
+
+    if (anyUp || anyDown) {
+      this.selectIndex = this.selectIndex === 0 ? 1 : 0;
+      g.audio.menuSelect();
+    }
+    if (anyEnter && this.stateTimer > 0.3) {
+      g.audio.menuSelect();
+      g.playerCount = this.selectIndex === 0 ? 1 : 2;
+      g.p2Active = g.playerCount === 2;
+      // Go to name entry for P1
+      this.nameEntrySlot = 1;
+      this.nameInput = g.p1Name;
+      this.nameLetterIdx = 0;
+      this.nameRepeatTimer = 0;
+      this.nameRepeatDir = 0;
+      this.setState(STATE_NAME_ENTRY);
+    }
+    // Escape goes back to title
+    if (g.input.pressed("Escape")) {
+      this.setState(STATE_TITLE);
+    }
+  }
+
+  // --- Name Entry ---
+  updateNameEntry(dt) {
+    const g = this.game;
+    const input = this.nameEntrySlot === 1 ? g.input : g.input2;
+    // Also allow P1 input for P2's name (in case of single controller)
+    const altInput = g.input;
+
+    // --- Keyboard input ---
+    const letter = input.consumeLetter() || (this.nameEntrySlot === 2 ? altInput.consumeLetter() : null);
+    if (letter === "ESCAPE") {
+      // Go back
+      if (this.nameEntrySlot === 2) {
+        // Back to P1 name
+        this.nameEntrySlot = 1;
+        this.nameInput = g.p1Name;
+        this.nameLetterIdx = 0;
+        this.stateTimer = 0;
+      } else {
+        this.setState(STATE_PLAYER_SELECT);
+      }
+      return;
+    }
+    if (letter === "BACKSPACE") {
+      this.nameInput = this.nameInput.slice(0, -1);
+      return;
+    }
+    // Enter key submits name (keyboard or gamepad Start)
+    if ((input.pressed("Enter") || altInput.pressed("Enter")) && this.stateTimer > 0.3) {
+      this._submitName();
+      return;
+    }
+    if (letter && letter.length === 1 && this.nameInput.length < 8) {
+      this.nameInput += letter;
+      this.nameLetterIdx = letter.charCodeAt(0) - 65;
+      g.audio.menuSelect();
+    }
+
+    // --- Gamepad D-pad ---
+    const upP = input.pressed("ArrowUp") || altInput.pressed("ArrowUp");
+    const downP = input.pressed("ArrowDown") || altInput.pressed("ArrowDown");
+    const upH = input.held("ArrowUp") || altInput.held("ArrowUp");
+    const downH = input.held("ArrowDown") || altInput.held("ArrowDown");
+
+    if (upP) {
+      this.nameLetterIdx = (this.nameLetterIdx + 1) % 26;
+      this.nameRepeatTimer = 0.35;
+      this.nameRepeatDir = 1;
+      g.audio.menuSelect();
+    } else if (downP) {
+      this.nameLetterIdx = (this.nameLetterIdx + 25) % 26;
+      this.nameRepeatTimer = 0.35;
+      this.nameRepeatDir = -1;
+      g.audio.menuSelect();
+    }
+    if ((this.nameRepeatDir === 1 && upH) || (this.nameRepeatDir === -1 && downH)) {
+      this.nameRepeatTimer -= dt;
+      if (this.nameRepeatTimer <= 0) {
+        this.nameLetterIdx = (this.nameLetterIdx + (this.nameRepeatDir === 1 ? 1 : 25)) % 26;
+        this.nameRepeatTimer = 0.1;
+        g.audio.menuSelect();
+      }
+    } else if (!upP && !downP) {
+      this.nameRepeatDir = 0;
+    }
+
+    // Gamepad A → confirm letter
+    const gpA = input.pressed("_gpA") || altInput.pressed("_gpA");
+    if (gpA && this.nameInput.length < 8) {
+      this.nameInput += String.fromCharCode(65 + this.nameLetterIdx);
+      g.audio.menuSelect();
+    }
+    // Gamepad B → delete
+    const gpB = input.pressed("_gpB") || altInput.pressed("_gpB");
+    if (gpB && this.nameInput.length > 0) {
+      this.nameInput = this.nameInput.slice(0, -1);
+    }
+  }
+  _submitName() {
+    const g = this.game;
+    const name = this.nameInput.trim() || (this.nameEntrySlot === 1 ? "STAR" : "LUNA");
+    if (this.nameEntrySlot === 1) {
+      g.p1Name = name;
+      if (g.p2Active) {
+        // Move to P2 name entry
+        this.nameEntrySlot = 2;
+        this.nameInput = g.p2Name;
+        this.nameLetterIdx = 0;
+        this.nameRepeatTimer = 0;
+        this.nameRepeatDir = 0;
+        this.stateTimer = 0;
+      } else {
+        // 1P — go to prologue
+        this.triggerStory(0);
+      }
+    } else {
+      g.p2Name = name;
+      // Go to prologue
+      this.triggerStory(0);
+    }
+    g.audio.menuSelect();
+  }
+
+  // --- Story Mode ---
+  triggerStory(afterWorld) {
+    const idx = STORY_SCENES.findIndex(s => s.triggerAfterWorld === afterWorld);
+    if (idx < 0) return false;
+    this.storySceneIndex = idx;
+    this.storyScrollY = 0;
+    this.storyPhase = 0;
+    this.setState(STATE_STORY);
+    return true;
+  }
+  updateStory(dt) {
+    const g = this.game;
+    const scene = STORY_SCENES[this.storySceneIndex];
+    if (!scene) { this.setState(STATE_TITLE); return; }
+
+    const anyEnter = g.input.pressed("Enter") || g.input2.pressed("Enter");
+
+    if (this.storyPhase === 0) {
+      // Phase 0: Fade in (1.5s)
+      if (this.stateTimer > 1.5 || anyEnter) {
+        this.storyPhase = 1;
+        this.storyScrollY = 0;
+      }
+    } else if (this.storyPhase === 1) {
+      // Phase 1: Scroll text
+      this.storyScrollY += dt * 14;
+      const lines = g.p2Active ? scene.text2P : scene.text1P;
+      const totalHeight = lines.length * 18;
+      if (this.storyScrollY >= totalHeight || anyEnter) {
+        this.storyPhase = 2;
+        this.storyScrollY = totalHeight;
+      }
+    } else if (this.storyPhase === 2) {
+      // Phase 2: All visible, wait for Enter
+      if (anyEnter) {
+        this._endStory();
+      }
+    }
+  }
+  _endStory() {
+    const g = this.game;
+    const scene = STORY_SCENES[this.storySceneIndex];
+    if (!scene) { this.setState(STATE_TITLE); return; }
+
+    if (scene.triggerAfterWorld === 0) {
+      // Prologue → start fresh game
+      g.startLevel(true);
+      this.setState(STATE_LEVEL_INTRO);
+    } else if (scene.triggerAfterWorld === 8) {
+      // Epilogue → title
+      this.setState(STATE_TITLE);
+    } else {
+      // Mid-game: level was already advanced in updateComplete, just start it
+      g.startLevel(false);
+      this.setState(STATE_LEVEL_INTRO);
     }
   }
 }
@@ -10546,10 +10950,11 @@ class Game {
   constructor() {
     const canvas = document.getElementById("c");
     this.renderer = new Renderer(canvas);
-    this.input = new InputManager();
+    this.input = new InputManager(1);
+    this.input2 = new InputManager(2);
     this.audio = new AudioManager();
     this.camera = new Camera();
-    this.particles = new ParticleSystem(300);
+    this.particles = new ParticleSystem(500); // increased for 2 players
     this.parallax = new ParallaxBackground(LEVEL_DEFS[0]);
     this.tileRenderer = new TileRenderer();
     this.spriteDrawer = new SpriteDrawer();
@@ -10558,23 +10963,87 @@ class Game {
 
     this.currentLevelIndex = 0;
     this.level = null;
-    this.player = new Player(0, 0);
+    this.player = new Player(0, 0, 1);
+    this.player2 = new Player(30, 0, 2);
+    this.players = [this.player, this.player2];
+    this.sharedLives = CFG.LIVES;
+    this._completingPlayer = null;
+    this.playerCount = 2;
+    this.p1Name = "STAR";
+    this.p2Name = "LUNA";
+    this.p2Active = true;
     this.gameTime = 0;
     this.levelTimer = 0;
     this.countdownStarted = false;
     this.bossIntroPlayed = false;
+    this._p2SpritesGenerated = false;
 
     this.lastTime = 0;
     this.accumulator = 0;
     this.fixedDT = 1 / 60;
     this.konamiFlashTimer = 0;
     this.konamiActivated = false;
+
+    // Story images: custom images for story scenes (drag-and-drop or from story/ folder)
+    this.storyImages = {}; // key → Image element
+    this._loadStoryImages();
+    this._setupStoryDragDrop();
+  }
+  _loadStoryImages() {
+    // Try loading from story/ folder + localStorage overrides
+    for (let i = 0; i <= 8; i++) {
+      const key = "story_" + i;
+      // Check localStorage first (drag-dropped images persist here)
+      const stored = localStorage.getItem("unicorn_coop_" + key);
+      if (stored) {
+        const img = new Image();
+        img.src = stored;
+        img.onload = () => { this.storyImages[key] = img; };
+      }
+      // Also try loading from story/ folder (won't error if missing)
+      const fileImg = new Image();
+      fileImg.src = "story/" + key + ".png";
+      fileImg.onload = () => {
+        // Only use file version if no localStorage override
+        if (!this.storyImages[key]) this.storyImages[key] = fileImg;
+      };
+    }
+  }
+  _setupStoryDragDrop() {
+    const canvas = document.getElementById("c");
+    canvas.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    });
+    canvas.addEventListener("drop", (e) => {
+      e.preventDefault();
+      // Only accept drops during story mode
+      if (this.stateMachine.state !== STATE_STORY) return;
+      const sceneIdx = this.stateMachine.storySceneIndex;
+      const scene = STORY_SCENES[sceneIdx];
+      if (!scene) return;
+
+      const file = e.dataTransfer.files[0];
+      if (!file || !file.type.startsWith("image/")) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        const key = scene.imageKey;
+        // Save to localStorage for persistence
+        try { localStorage.setItem("unicorn_coop_" + key, dataUrl); } catch(err) {}
+        // Create Image element
+        const img = new Image();
+        img.src = dataUrl;
+        img.onload = () => { this.storyImages[key] = img; };
+      };
+      reader.readAsDataURL(file);
+    });
   }
   startLevel(freshGame) {
     const def = LEVEL_DEFS[this.currentLevelIndex];
     this.level = new Level(def);
     this.level.generate();
-    // Rebuild parallax for new theme (multi-parallax for zoned levels)
     if (def.zones) {
       this.parallaxMap = {};
       for (const zone of def.zones) {
@@ -10590,65 +11059,92 @@ class Game {
       this.parallaxZones = null;
     }
     this.camera.setBounds(this.level.width, this.level.height);
+    // Reset both players
     this.player.reset(this.level.spawnX, this.level.spawnY);
+    this.player2.reset(this.level.spawnX + 30, this.level.spawnY);
     this.player.stars = 0;
-    this.player.isUnderwater = def.zones ? !!def.zones[0].isUnderwater : !!def.isUnderwater;
+    this.player2.stars = 0;
+    this.player._deathHandled = false;
+    this.player2._deathHandled = false;
+    this.player.respawnTimer = 0;
+    this.player2.respawnTimer = 0;
+    const isUW = def.zones ? !!def.zones[0].isUnderwater : !!def.isUnderwater;
+    this.player.isUnderwater = isUW;
+    this.player2.isUnderwater = isUW;
     this.gameTime = 0;
     this.levelTimer = def.isBoss ? CFG.BOSS_LEVEL_TIME : CFG.LEVEL_TIME;
     this.countdownStarted = false;
     this.bossIntroPlayed = false;
+    this._completingPlayer = null;
     if (freshGame) {
-      // Brand new game — reset everything
       this.currentLevelIndex = 0;
       const freshDef = LEVEL_DEFS[0];
       this.level = new Level(freshDef);
       this.level.generate();
       this.parallax = new ParallaxBackground(freshDef);
       this.camera.setBounds(this.level.width, this.level.height);
-      this.player.reset(this.level.spawnX, this.level.spawnY);
-      this.player.lives = CFG.LIVES;
-      this.player.isBig = false;
-      this.player.hasWings = false;
-      this.player.hasRainbow = false;
-      this.player.isMermaid = false;
-      this.player.isKittycorn = false;
-      this.player.isPixicorn = false;
-      this.player.isMouseicorn = false;
-      this.player.isUnderwater = !!freshDef.isUnderwater;
-      this.player.flowersRevived = 0;
-      this.player.flowersForRainbow = 0;
-      this.player.canTripleJump = false;
-      this.player.canDoubleJump = false;
-      this.player.growWingsTimer = 0;
-      this.player.mermaidTransformTimer = 0;
-      this.player.kittycornTransformTimer = 0;
-      this.player.pixicornTransformTimer = 0;
-      this.player.mousicornTransformTimer = 0;
-      // Restore konami lives after fresh-game reset
-      if (this.konamiActivated) this.player.lives = 10;
+      this.sharedLives = CFG.LIVES;
+      // Reset both players fully
+      for (const p of this.players) {
+        p.reset(this.level.spawnX + (p.playerSlot === 2 ? 30 : 0), this.level.spawnY);
+        p.lives = CFG.LIVES;
+        p.isBig = false;
+        p.hasWings = false;
+        p.hasRainbow = false;
+        p.isMermaid = false;
+        p.isKittycorn = false;
+        p.isPixicorn = false;
+        p.isMouseicorn = false;
+        p.isUnderwater = !!freshDef.isUnderwater;
+        p.flowersRevived = 0;
+        p.flowersForRainbow = 0;
+        p.canTripleJump = false;
+        p.canDoubleJump = false;
+        p.growWingsTimer = 0;
+        p.mermaidTransformTimer = 0;
+        p.kittycornTransformTimer = 0;
+        p.pixicornTransformTimer = 0;
+        p.mousicornTransformTimer = 0;
+        p._deathHandled = false;
+        p.respawnTimer = 0;
+      }
+      if (this.konamiActivated) this.sharedLives = 10;
     }
-    // Power-ups (isBig, hasWings, hasRainbow, lives) carry over between levels
-    // Clear incompatible transformations for the new environment:
-    // Mermaid can't be on land — revert to normal unicorn
-    if (!this.player.isUnderwater && this.player.isMermaid) {
-      this.player.isMermaid = false;
+    // Clear incompatible transformations for both players
+    for (const p of this.players) {
+      if (!p.isUnderwater && p.isMermaid) p.isMermaid = false;
+      if (p.isUnderwater) {
+        p.isMouseicorn = false;
+        p.isKittycorn = false;
+        p.isPixicorn = false;
+      }
     }
-    // Land forms (mousicorn, kittycorn, pixicorn) can't display underwater — revert
-    if (this.player.isUnderwater) {
-      if (this.player.isMouseicorn) this.player.isMouseicorn = false;
-      if (this.player.isKittycorn) this.player.isKittycorn = false;
-      if (this.player.isPixicorn) this.player.isPixicorn = false;
+    // Deactivate P2 if 1-player mode
+    if (!this.p2Active) {
+      this.player2.alive = false;
+      this.player2.respawnTimer = 0;
     }
-    // Snap camera to player
-    this.camera.x = this.player.cx - CFG.W * 0.4;
+    // Snap camera
+    const midX = this.p2Active ? (this.player.cx + this.player2.cx) / 2 : this.player.cx;
+    this.camera.x = midX - CFG.W * 0.5;
     this.camera.targetX = this.camera.x;
-    // Lock Y to show ground
     this.camera.y = this.level.height - CFG.H;
     this.camera.targetY = this.camera.y;
   }
   respawnPlayer() {
     this.player.reset(this.level.spawnX, this.level.spawnY);
-    this.camera.x = this.player.cx - CFG.W * 0.4;
+    this.player._deathHandled = false;
+    this.player.respawnTimer = 0;
+    if (this.p2Active) {
+      this.player2.reset(this.level.spawnX + 30, this.level.spawnY);
+      this.player2._deathHandled = false;
+      this.player2.respawnTimer = 0;
+    } else {
+      this.player2.alive = false;
+      this.player2.respawnTimer = 0;
+    }
+    const midX = this.p2Active ? (this.player.cx + this.player2.cx) / 2 : this.player.cx;
+    this.camera.x = midX - CFG.W * 0.5;
     this.camera.targetX = this.camera.x;
     this.camera.y = this.level.height - CFG.H;
     this.camera.targetY = this.camera.y;
@@ -10661,28 +11157,33 @@ class Game {
     // Clamp large dt (tab switch, etc.)
     if (dt > 0.1) dt = 0.1;
 
+    // Generate P2 sprites once all sprites are loaded
+    if (!this._p2SpritesGenerated && spritesLoaded) {
+      this._p2SpritesGenerated = true;
+      generateP2Sprites();
+    }
+
     // Init audio on first interaction (keyboard or gamepad)
     if (!this.audio.initialized) {
-      if (Object.keys(this.input.keys).length > 0 || this.input.anyGamepadPressed) {
+      if (Object.keys(KEYBOARD).length > 0 || this.input.anyGamepadPressed || this.input2.anyGamepadPressed) {
         this.audio.init();
-        // Start title music if on title screen
         if (this.stateMachine.state === STATE_TITLE) {
           this.audio.playMusic("title_screen", true);
         }
       }
     }
 
-    // Check for deferred music that finished loading
     if (this.audio.initialized) {
       this.audio.checkPendingMusic();
     }
 
     this.input.update();
+    this.input2.update();
 
-    // Konami Code reward — flag persists so lives survive startLevel reset
+    // Konami Code reward (P1 only) — shared lives pool
     if (this.input.konamiJustCompleted) {
       this.konamiActivated = true;
-      this.player.lives = 10;
+      this.sharedLives = 10;
       this.audio.hoopSound();
       this.konamiFlashTimer = 2.0;
     }
@@ -10727,6 +11228,15 @@ class Game {
         this.renderGame(c);
         this.renderComplete(c);
         break;
+      case STATE_PLAYER_SELECT:
+        this.renderPlayerSelect(c);
+        break;
+      case STATE_NAME_ENTRY:
+        this.renderNameEntry(c);
+        break;
+      case STATE_STORY:
+        this.renderStory(c);
+        break;
     }
 
     // Konami Code flash (visible on any screen)
@@ -10739,7 +11249,7 @@ class Game {
       c.textBaseline = "middle";
       c.font = "bold 18px monospace";
       c.fillStyle = `rgba(255,255,100,${a})`;
-      c.fillText("\u2764 10 LIVES! \u2764", CFG.W / 2, CFG.H / 2);
+      c.fillText("\u2764 10 SHARED LIVES! \u2764", CFG.W / 2, CFG.H / 2);
       c.restore();
     }
 
@@ -10793,49 +11303,463 @@ class Game {
 
     // Subtitle
     c.font = "bold 14px monospace";
-    c.fillStyle = "#cc88ff";
-    c.fillText("NEXT  GEN", CFG.W/2, 95);
+    c.fillStyle = "#66ccff";
+    c.fillText("2 PLAYER  CO-OP", CFG.W/2, 95);
 
-    // Animated unicorn on title screen
+    // Two animated unicorns on title screen (P1 white, P2 blue-tinted)
     const bobY = Math.sin(gt * 2) * 5;
+    const frame = Math.floor(gt * 10) % CFG.SPRITE_RUN_FRAMES;
+    const drawH = 65;
+
+    // P1 unicorn (left)
     c.save();
-    c.translate(CFG.W/2, 155 + bobY);
+    c.translate(CFG.W/2 - 55, 150 + bobY);
     if (SPRITES.run) {
-      // Use real sprite - animated running in place
-      const frame = Math.floor(gt * 10) % CFG.SPRITE_RUN_FRAMES;
       const srcX = frame * CFG.SPRITE_RUN_FW;
-      const drawH = 80;
       const drawW = CFG.SPRITE_RUN_FW * (drawH / CFG.SPRITE_RUN_FH);
       c.drawImage(SPRITES.run,
         srcX, 0, CFG.SPRITE_RUN_FW, CFG.SPRITE_RUN_FH,
         -drawW/2, -drawH/2, drawW, drawH
       );
     } else {
-      // Fallback circle
       c.fillStyle = "#ffffff";
-      c.beginPath();
-      c.ellipse(0, 0, 20, 14, 0, 0, Math.PI*2);
-      c.fill();
+      c.beginPath(); c.ellipse(0, 0, 16, 12, 0, 0, Math.PI*2); c.fill();
     }
     c.restore();
+    // P1 label
+    c.font = "bold 8px monospace";
+    c.fillStyle = "#ffffff";
+    c.fillText("P1", CFG.W/2 - 55, 120);
+
+    // P2 unicorn (right, palette swapped)
+    c.save();
+    c.translate(CFG.W/2 + 55, 150 + Math.sin(gt * 2 + 1) * 5);
+    c.scale(-1, 1); // face left
+    if (SPRITES_P2.run || SPRITES.run) {
+      const sprite = SPRITES_P2.run || SPRITES.run;
+      const srcX = frame * CFG.SPRITE_RUN_FW;
+      const drawW = CFG.SPRITE_RUN_FW * (drawH / CFG.SPRITE_RUN_FH);
+      c.drawImage(sprite,
+        srcX, 0, CFG.SPRITE_RUN_FW, CFG.SPRITE_RUN_FH,
+        -drawW/2, -drawH/2, drawW, drawH
+      );
+    } else {
+      c.fillStyle = "#66ccff";
+      c.beginPath(); c.ellipse(0, 0, 16, 12, 0, 0, Math.PI*2); c.fill();
+    }
+    c.restore();
+    // P2 label
+    c.font = "bold 8px monospace";
+    c.fillStyle = "#66ccff";
+    c.fillText("P2", CFG.W/2 + 55, 120);
 
     // Instructions
     const blink = Math.sin(gt * 4) > 0;
     if (blink) {
       c.font = "bold 11px monospace";
       c.fillStyle = "#ffffff";
-      c.fillText("PRESS  ENTER  TO  START", CFG.W/2, 210);
+      c.fillText("PRESS  ENTER  TO  START", CFG.W/2, 200);
     }
 
-    c.font = "9px monospace";
+    c.font = "8px monospace";
     c.fillStyle = "#8866aa";
-    c.fillText("ARROWS / WASD = Move    SPACE = Jump    Double Jump in midair!", CFG.W/2, 235);
+    c.fillText("P1: ARROWS + SPACE/SHIFT    P2: WASD + Q/F/X/E", CFG.W/2, 220);
+    c.fillText("GAMEPADS: Controller 1 = P1    Controller 2 = P2", CFG.W/2, 232);
 
     // Code entry hint
     c.font = "bold 9px monospace";
     c.fillStyle = "#44aaaa";
     c.fillText("PRESS  C / SELECT  TO  ENTER  SAVE  CODE", CFG.W/2, 252);
 
+    c.restore();
+  }
+  renderPlayerSelect(c) {
+    const gt = this.stateMachine.titlePhase;
+    const sel = this.stateMachine.selectIndex;
+
+    // Animated gradient background (same as title)
+    const grd = c.createLinearGradient(0, 0, 0, CFG.H);
+    const hue1 = (gt * 20) % 360;
+    grd.addColorStop(0, `hsl(${hue1},70%,12%)`);
+    grd.addColorStop(0.5, `hsl(${(hue1+60)%360},60%,16%)`);
+    grd.addColorStop(1, `hsl(${(hue1+120)%360},70%,12%)`);
+    c.fillStyle = grd;
+    c.fillRect(0, 0, CFG.W, CFG.H);
+
+    // Stars
+    const rng = new SeededRNG(42);
+    for (let i = 0; i < 50; i++) {
+      const sx = rng.next() * CFG.W;
+      const sy = rng.next() * CFG.H * 0.7;
+      const twinkle = Math.sin(gt * 3 + i * 1.5) * 0.4 + 0.6;
+      c.fillStyle = `rgba(255,255,255,${twinkle})`;
+      c.beginPath(); c.arc(sx, sy, 1 + rng.next(), 0, Math.PI*2); c.fill();
+    }
+
+    c.save();
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+
+    // Heading
+    c.font = "bold 22px monospace";
+    c.fillStyle = "#ffcc44";
+    c.fillText("SELECT  PLAYERS", CFG.W/2, 70);
+
+    // Menu items
+    const items = ["1  PLAYER", "2  PLAYERS"];
+    const baseY = CFG.H/2 - 15;
+    for (let i = 0; i < 2; i++) {
+      const y = baseY + i * 40;
+      const isSel = i === sel;
+      c.font = isSel ? "bold 18px monospace" : "bold 14px monospace";
+      c.fillStyle = isSel ? "#ffffff" : "#666688";
+      c.fillText(items[i], CFG.W/2, y);
+      // Arrow cursor
+      if (isSel) {
+        const bounce = Math.sin(gt * 6) * 3;
+        c.fillStyle = "#44ddee";
+        c.font = "bold 16px monospace";
+        c.fillText("\u25B6", CFG.W/2 - 85 + bounce, y);
+      }
+    }
+
+    // Hint
+    c.font = "9px monospace";
+    c.fillStyle = "rgba(255,255,255,0.4)";
+    c.fillText("\u25B2\u25BC  SELECT     ENTER  CONFIRM", CFG.W/2, CFG.H - 30);
+
+    c.restore();
+  }
+  renderNameEntry(c) {
+    const gt = this.stateMachine.titlePhase;
+    const sm = this.stateMachine;
+    const slot = sm.nameEntrySlot;
+    const name = sm.nameInput;
+
+    // Dark background + starfield
+    c.fillStyle = "#0a0a1a";
+    c.fillRect(0, 0, CFG.W, CFG.H);
+    const rng = new SeededRNG(42);
+    for (let i = 0; i < 50; i++) {
+      const sx = rng.next() * CFG.W;
+      const sy = rng.next() * CFG.H * 0.8;
+      const twinkle = Math.sin(gt * 3 + i * 1.5) * 0.3 + 0.5;
+      c.fillStyle = `rgba(255,255,255,${twinkle})`;
+      c.beginPath(); c.arc(sx, sy, 1, 0, Math.PI*2); c.fill();
+    }
+
+    c.save();
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+
+    // Heading
+    c.font = "bold 18px monospace";
+    c.fillStyle = slot === 1 ? "#ffffff" : "#66ccff";
+    c.fillText("PLAYER " + slot + "  NAME", CFG.W/2, 55);
+
+    // Letter boxes (8 slots)
+    const boxW = 26, boxH = 32, gap = 4;
+    const totalW = 8 * boxW + 7 * gap;
+    const startX = CFG.W/2 - totalW/2;
+    const boxY = CFG.H/2 - 20;
+    const letterIdx = sm.nameLetterIdx;
+    const curLetter = String.fromCharCode(65 + letterIdx);
+
+    for (let i = 0; i < 8; i++) {
+      const bx = startX + i * (boxW + gap);
+      c.fillStyle = i < name.length ? "rgba(50,200,220,0.12)" : "rgba(255,255,255,0.04)";
+      c.fillRect(bx, boxY, boxW, boxH);
+      c.strokeStyle = i === name.length ? (slot === 1 ? "#ffffff" : "#66ccff") : "rgba(255,255,255,0.2)";
+      c.lineWidth = i === name.length ? 2 : 1;
+      c.strokeRect(bx, boxY, boxW, boxH);
+
+      if (i < name.length) {
+        c.font = "bold 18px monospace";
+        c.fillStyle = "#ffffff";
+        c.fillText(name[i], bx + boxW/2, boxY + boxH/2 + 1);
+      }
+      // Active box — D-pad cycling
+      if (i === name.length && name.length < 8) {
+        c.font = "bold 18px monospace";
+        c.fillStyle = slot === 1 ? "#ffcc44" : "#66ccff";
+        c.fillText(curLetter, bx + boxW/2, boxY + boxH/2 + 1);
+        c.font = "9px monospace";
+        c.fillStyle = "rgba(255,255,255,0.5)";
+        c.fillText("\u25B2", bx + boxW/2, boxY - 7);
+        c.fillText("\u25BC", bx + boxW/2, boxY + boxH + 10);
+      }
+    }
+
+    // Default name hint
+    const defaultName = slot === 1 ? "STAR" : "LUNA";
+    c.font = "10px monospace";
+    c.fillStyle = "rgba(255,255,255,0.3)";
+    c.fillText("DEFAULT: " + defaultName, CFG.W/2, boxY + boxH + 28);
+
+    // Instructions
+    c.font = "9px monospace";
+    c.fillStyle = "rgba(255,255,255,0.45)";
+    c.fillText("KEYBOARD: TYPE + ENTER    BACKSPACE    ESC", CFG.W/2, CFG.H - 38);
+    c.fillText("GAMEPAD:  \u25B2\u25BC PICK   A ADD   B DELETE   START OK", CFG.W/2, CFG.H - 24);
+
+    c.restore();
+  }
+  renderStory(c) {
+    const sm = this.stateMachine;
+    const scene = STORY_SCENES[sm.storySceneIndex];
+    if (!scene) return;
+    const gt = sm.stateTimer;
+
+    // Gradient background
+    const grd = c.createLinearGradient(0, 0, 0, CFG.H);
+    for (let i = 0; i < scene.bgColors.length; i++) {
+      grd.addColorStop(i / (scene.bgColors.length - 1), scene.bgColors[i]);
+    }
+    c.fillStyle = grd;
+    c.fillRect(0, 0, CFG.W, CFG.H);
+
+    // Check for custom image
+    const customImg = this.storyImages[scene.imageKey];
+    let textStartY = 50;
+
+    if (customImg && customImg.complete) {
+      // Draw custom image (centered, fit within top portion)
+      const maxW = CFG.W - 20;
+      const maxH = CFG.H * 0.4;
+      const imgAspect = customImg.width / customImg.height;
+      let drawW, drawH;
+      if (imgAspect > maxW / maxH) {
+        drawW = maxW;
+        drawH = maxW / imgAspect;
+      } else {
+        drawH = maxH;
+        drawW = maxH * imgAspect;
+      }
+      const imgX = (CFG.W - drawW) / 2;
+      const imgY = 35;
+      // Fade in with phase 0
+      if (sm.storyPhase === 0) {
+        c.globalAlpha = Math.min(1, gt / 1.5);
+      }
+      // Rounded border effect
+      c.save();
+      c.strokeStyle = "rgba(255,255,255,0.3)";
+      c.lineWidth = 2;
+      c.strokeRect(imgX - 1, imgY - 1, drawW + 2, drawH + 2);
+      c.drawImage(customImg, imgX, imgY, drawW, drawH);
+      c.globalAlpha = 1;
+      c.restore();
+      textStartY = imgY + drawH + 12;
+    } else {
+      // Fallback: canvas illustration
+      this.drawStoryIllustration(c, scene.illustrationTheme, gt);
+    }
+
+    c.save();
+    c.textAlign = "center";
+    c.textBaseline = "top";
+
+    // Fade in overlay for phase 0
+    if (sm.storyPhase === 0) {
+      const fadeAlpha = Math.min(1, gt / 1.5);
+      c.globalAlpha = fadeAlpha;
+    }
+
+    // Title
+    c.font = "bold 16px monospace";
+    c.fillStyle = "#ffcc44";
+    c.fillText(scene.title, CFG.W/2, customImg ? textStartY : 20);
+    const titleOffset = customImg ? textStartY + 20 : 42;
+
+    // Text lines
+    const lines = this.p2Active ? scene.text2P : scene.text1P;
+    const lineH = 18;
+    c.font = "10px monospace";
+
+    for (let i = 0; i < lines.length; i++) {
+      const lineY = titleOffset + i * lineH;
+      if (lineY > CFG.H - 35) break; // Don't draw past bottom
+      // Fade in based on scroll progress
+      const lineReveal = sm.storyScrollY - i * lineH;
+      const lineAlpha = sm.storyPhase === 0 ? 0 : Math.min(1, Math.max(0, lineReveal / 16));
+      if (lineAlpha <= 0) continue;
+
+      c.globalAlpha = lineAlpha;
+      // Inject names
+      let text = lines[i].replace(/\{P1\}/g, this.p1Name).replace(/\{P2\}/g, this.p2Name);
+      c.fillStyle = text === "THE END" ? "#ffcc44" : "#ddddee";
+      c.fillText(text, CFG.W/2, lineY);
+    }
+
+    c.globalAlpha = 1;
+
+    // Blinking prompt in phase 2
+    if (sm.storyPhase === 2 && Math.sin(gt * 4) > 0) {
+      c.font = "bold 10px monospace";
+      c.fillStyle = "#aaaaff";
+      c.fillText("PRESS  ENTER  TO  CONTINUE", CFG.W/2, CFG.H - 20);
+    }
+
+    // Drop hint (subtle, always visible in story mode)
+    if (!customImg) {
+      c.font = "8px monospace";
+      c.fillStyle = "rgba(255,255,255,0.2)";
+      c.fillText("DROP IMAGE HERE TO ADD ART", CFG.W/2, CFG.H - 8);
+    }
+
+    c.restore();
+  }
+  drawStoryIllustration(c, theme, gt) {
+    c.save();
+    const w = CFG.W, h = CFG.H;
+    c.globalAlpha = 0.3;
+
+    switch (theme) {
+      case "meadow_dawn": {
+        // Green hills, sunrise
+        const sunY = h * 0.35 + Math.sin(gt * 0.5) * 5;
+        c.fillStyle = "#ffcc44";
+        c.beginPath(); c.arc(w * 0.7, sunY, 25, 0, Math.PI*2); c.fill();
+        c.fillStyle = "#225500";
+        c.beginPath(); c.moveTo(0, h*0.7); c.quadraticCurveTo(w*0.25, h*0.5, w*0.5, h*0.65);
+        c.quadraticCurveTo(w*0.75, h*0.55, w, h*0.7); c.lineTo(w, h); c.lineTo(0, h); c.fill();
+        // Unicorn silhouette
+        c.fillStyle = "#112200";
+        c.beginPath();
+        c.ellipse(w*0.3, h*0.63, 18, 12, 0, 0, Math.PI*2); c.fill();
+        c.beginPath(); c.moveTo(w*0.3+10, h*0.63-12); c.lineTo(w*0.3+14, h*0.63-28);
+        c.lineTo(w*0.3+8, h*0.63-10); c.fill();
+        break;
+      }
+      case "gnome_defeated": {
+        // Meadow edge with water ahead
+        c.fillStyle = "#224400";
+        c.fillRect(0, h*0.65, w*0.5, h*0.35);
+        c.fillStyle = "#003366";
+        c.fillRect(w*0.5, h*0.65, w*0.5, h*0.35);
+        // Ripples
+        c.strokeStyle = "#225588";
+        c.lineWidth = 1;
+        for (let i = 0; i < 3; i++) {
+          c.beginPath();
+          c.arc(w*0.7, h*0.75 + i*12, 20 + i*10, 0, Math.PI); c.stroke();
+        }
+        break;
+      }
+      case "mermicorn_rise": {
+        // Water with sparkles
+        c.fillStyle = "#002244";
+        c.fillRect(0, h*0.4, w, h*0.6);
+        // Rising figure
+        const bobY = Math.sin(gt * 2) * 5;
+        c.fillStyle = "#44aacc";
+        c.beginPath(); c.ellipse(w*0.5, h*0.45 + bobY, 14, 20, 0, 0, Math.PI*2); c.fill();
+        // Sparkles
+        for (let i = 0; i < 8; i++) {
+          const sx = w*0.3 + Math.sin(gt*2 + i) * w*0.2;
+          const sy = h*0.4 + Math.abs(Math.sin(gt*1.5 + i*0.7)) * h*0.3;
+          c.fillStyle = "#88ddff";
+          c.beginPath(); c.arc(sx, sy, 2, 0, Math.PI*2); c.fill();
+        }
+        break;
+      }
+      case "kittycorn_forest": {
+        // Dark canopy
+        c.fillStyle = "#0a1a00";
+        c.fillRect(0, 0, w, h*0.5);
+        // Tree trunks
+        c.fillStyle = "#1a2a00";
+        for (let i = 0; i < 5; i++) {
+          const tx = w*0.1 + i*w*0.2;
+          c.fillRect(tx-5, h*0.2, 10, h*0.8);
+          // Canopy circles
+          c.beginPath(); c.arc(tx, h*0.25, 30, 0, Math.PI*2); c.fill();
+        }
+        // Cat ear silhouettes
+        c.fillStyle = "#0a1500";
+        c.beginPath(); c.moveTo(w*0.45, h*0.55); c.lineTo(w*0.48, h*0.42);
+        c.lineTo(w*0.51, h*0.55); c.fill();
+        c.beginPath(); c.moveTo(w*0.49, h*0.55); c.lineTo(w*0.52, h*0.42);
+        c.lineTo(w*0.55, h*0.55); c.fill();
+        break;
+      }
+      case "pixicorn_sparkle": {
+        // Waterfall
+        c.fillStyle = "#220044";
+        c.fillRect(w*0.4, 0, w*0.2, h*0.7);
+        c.fillStyle = "#440088";
+        c.fillRect(w*0.42, h*0.7, w*0.16, h*0.3);
+        // Sparkle particles
+        for (let i = 0; i < 15; i++) {
+          const px = w*0.3 + Math.sin(gt + i*0.8) * w*0.25;
+          const py = (h*0.2 + i*h*0.05 + gt*20) % h;
+          const s = 1 + Math.sin(gt*3+i) * 0.5;
+          c.fillStyle = `hsl(${(gt*60+i*30)%360},80%,70%)`;
+          c.beginPath(); c.arc(px, py, s, 0, Math.PI*2); c.fill();
+        }
+        break;
+      }
+      case "mousicorn_sewer": {
+        // Dark tunnel
+        c.fillStyle = "#0a0a00";
+        c.fillRect(0, h*0.3, w, h*0.5);
+        // Light at end
+        const lightR = 40 + Math.sin(gt * 2) * 5;
+        const grad = c.createRadialGradient(w*0.8, h*0.55, 0, w*0.8, h*0.55, lightR);
+        grad.addColorStop(0, "rgba(255,255,200,0.6)");
+        grad.addColorStop(1, "rgba(255,255,200,0)");
+        c.fillStyle = grad;
+        c.beginPath(); c.arc(w*0.8, h*0.55, lightR, 0, Math.PI*2); c.fill();
+        break;
+      }
+      case "world_travel": {
+        // Globe outline
+        c.strokeStyle = "#885500";
+        c.lineWidth = 2;
+        c.beginPath(); c.arc(w*0.5, h*0.5, 50, 0, Math.PI*2); c.stroke();
+        // Longitude lines
+        for (let i = 0; i < 4; i++) {
+          c.beginPath(); c.ellipse(w*0.5, h*0.5, 50*Math.cos(i*0.7), 50, gt*0.3+i, 0, Math.PI*2);
+          c.stroke();
+        }
+        break;
+      }
+      case "storm_cleared": {
+        // Parting clouds
+        c.fillStyle = "#334455";
+        c.beginPath(); c.ellipse(w*0.2, h*0.3, 80, 25, 0, 0, Math.PI*2); c.fill();
+        c.beginPath(); c.ellipse(w*0.8, h*0.3, 80, 25, 0, 0, Math.PI*2); c.fill();
+        // Gap in center — rainbow bridge
+        const rc = ["#ff4444","#ff8800","#ffff00","#44ff44","#4488ff","#8844ff"];
+        for (let i = 0; i < rc.length; i++) {
+          c.strokeStyle = rc[i];
+          c.lineWidth = 3;
+          c.beginPath(); c.arc(w*0.5, h*0.6, 60+i*4, Math.PI, 0); c.stroke();
+        }
+        break;
+      }
+      case "rainbow_finale": {
+        // Full rainbow arc
+        const rc = ["#ff4444","#ff8800","#ffff00","#44ff44","#4488ff","#8844ff","#ff44ff"];
+        for (let i = 0; i < rc.length; i++) {
+          c.strokeStyle = rc[i];
+          c.lineWidth = 4;
+          c.beginPath(); c.arc(w*0.5, h*0.7, 80+i*5, Math.PI, 0); c.stroke();
+        }
+        // Animated sparkles
+        for (let i = 0; i < 20; i++) {
+          const angle = Math.PI + (i/20) * Math.PI;
+          const r = 80 + Math.sin(gt*3+i)*20;
+          const sx = w*0.5 + Math.cos(angle)*r;
+          const sy = h*0.7 + Math.sin(angle)*r;
+          c.fillStyle = `hsl(${(gt*80+i*18)%360},90%,70%)`;
+          c.beginPath(); c.arc(sx, sy, 1.5+Math.sin(gt*4+i)*0.8, 0, Math.PI*2); c.fill();
+        }
+        break;
+      }
+    }
+
+    c.globalAlpha = 1;
     c.restore();
   }
   renderCodeEntry(c) {
@@ -10951,10 +11875,11 @@ class Game {
     c.fillStyle = tGrd;
     c.fillText(def.title, CFG.W/2, CFG.H/2 + 10);
 
-    // Lives display
+    // Shared lives display
     c.font = "bold 11px monospace";
     c.fillStyle = "#ffffff";
-    c.fillText("\u2764 x " + this.player.lives, CFG.W/2, CFG.H/2 + 40);
+    const livesLabel = this.p2Active ? "  (" + this.p1Name.substring(0,5) + " + " + this.p2Name.substring(0,5) + ")" : "";
+    c.fillText("\u2764 x " + this.sharedLives + livesLabel, CFG.W/2, CFG.H/2 + 40);
 
     c.restore();
   }
@@ -11200,11 +12125,40 @@ class Game {
       }
     }
 
-    // Player
+    // Player 1
     if (this.player.alive || this.stateMachine.state === STATE_DYING) {
       c.save();
       c.translate(-camX, -camY);
+      // Ghost effect while respawning
+      if (!this.player.alive && this.player.respawnTimer > 0) {
+        c.globalAlpha = 0.3 + 0.2 * Math.sin(this.gameTime * 8);
+      }
       this.spriteDrawer.drawPlayer(c, this.player, this.gameTime);
+      c.globalAlpha = 1;
+      // P1 label (player name)
+      if (this.player.alive) {
+        c.font = "bold 7px monospace";
+        c.textAlign = "center";
+        c.fillStyle = "#ffffff";
+        c.fillText(this.p1Name.substring(0, 5), this.player.cx, this.player.top - 6);
+      }
+      c.restore();
+    }
+    // Player 2 (only if active)
+    if (this.p2Active && (this.player2.alive || (this.player2.respawnTimer > 0) || this.stateMachine.state === STATE_DYING)) {
+      c.save();
+      c.translate(-camX, -camY);
+      if (!this.player2.alive && this.player2.respawnTimer > 0) {
+        c.globalAlpha = 0.3 + 0.2 * Math.sin(this.gameTime * 8);
+      }
+      this.spriteDrawer.drawPlayer(c, this.player2, this.gameTime, true);
+      c.globalAlpha = 1;
+      if (this.player2.alive) {
+        c.font = "bold 7px monospace";
+        c.textAlign = "center";
+        c.fillStyle = "#66ccff";
+        c.fillText(this.p2Name.substring(0, 5), this.player2.cx, this.player2.top - 6);
+      }
       c.restore();
     }
 
@@ -11239,7 +12193,7 @@ class Game {
     }
 
     // HUD
-    this.hud.draw(c, this.player, this.gameTime, this.level.levelDef, this.levelTimer);
+    this.hud.draw(c, this.player, this.gameTime, this.level.levelDef, this.levelTimer, this.p2Active ? this.player2 : null, this.sharedLives);
 
     // Death overlay
     if (this.stateMachine.state === STATE_DYING) {
@@ -11253,7 +12207,7 @@ class Game {
         c.textBaseline = "middle";
         c.font = "bold 20px monospace";
         c.fillStyle = "#ff4444";
-        c.fillText(this.player.lives > 0 ? "OUCH!" : "GAME OVER", CFG.W/2, CFG.H/2);
+        c.fillText(this.sharedLives >= 0 ? "OUCH!" : "GAME OVER", CFG.W/2, CFG.H/2);
         c.restore();
       }
     }
@@ -11318,7 +12272,8 @@ class Game {
     // Stats
     c.font = "bold 13px monospace";
     c.fillStyle = "#ffee44";
-    c.fillText("Stars: " + this.player.stars + " / " + this.level.stars.length, CFG.W/2, CFG.H/2 + 15);
+    const totalStars = this.player.stars + (this.p2Active ? this.player2.stars : 0);
+    c.fillText("Stars: " + totalStars + " / " + this.level.stars.length, CFG.W/2, CFG.H/2 + 15);
 
     // Level name
     c.font = "bold 10px monospace";

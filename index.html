@@ -1504,7 +1504,19 @@ class AudioManager {
       this.musicGain.gain.value = 0.35;
       this.musicGain.connect(this.masterGain);
       this.initialized = true;
+      console.log("[Audio] AudioContext initialized, state:", this.ctx.state);
       this.preloadAll();
+      // Debug helper: type audioDebug() in console to see buffer status
+      window.audioDebug = () => {
+        const loaded = Object.keys(this.buffers);
+        const sfxKeys = Object.keys(SFX_MAP);
+        const missing = sfxKeys.filter(k => !this.buffers[SFX_MAP[k].file]);
+        console.log("Loaded buffers:", loaded.length, loaded);
+        console.log("SFX_MAP keys missing buffers:", missing.length, missing);
+        console.log("Current music:", this._currentMusic ? this._currentMusic.name : "none");
+        console.log("Pending music:", this._pendingMusic || "none");
+        console.log("AudioContext state:", this.ctx.state);
+      };
     } catch(e) { console.warn("WebAudio unavailable:", e); }
   }
   preloadAll() {
@@ -1521,13 +1533,29 @@ class AudioManager {
       "music_world7.mp3","music_world8.mp3","music_world8_alt.mp3"
     ];
     const files = [...new Set(sfxFiles)].concat(extraWavs, musicFiles);
+    this._loadTotal = files.length;
+    this._loadCount = 0;
+    this._loadFailed = [];
     for (const f of files) {
       const name = f.replace(/\.(wav|mp3)$/, "");
-      fetch("sounds/" + f).then(r => r.arrayBuffer()).then(buf => {
+      const url = "sounds/" + encodeURIComponent(f);
+      fetch(url).then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status + " for " + f);
+        return r.arrayBuffer();
+      }).then(buf => {
         return this.ctx.decodeAudioData(buf);
       }).then(decoded => {
         this.buffers[name] = decoded;
-      }).catch(() => {});
+        this._loadCount++;
+        if (this._loadCount === this._loadTotal) console.log("[Audio] All " + this._loadTotal + " files loaded OK");
+      }).catch(e => {
+        this._loadFailed.push(f);
+        this._loadCount++;
+        console.warn("[Audio] FAILED to load:", f, e.message || e);
+        if (this._loadCount === this._loadTotal) {
+          console.log("[Audio] Loading done. " + this._loadFailed.length + " failed:", this._loadFailed);
+        }
+      });
     }
   }
   playSample(name, vol) {
@@ -1543,6 +1571,7 @@ class AudioManager {
   _sfx(key) {
     const s = SFX_MAP[key];
     if (s && this.buffers[s.file]) { this.playSample(s.file, s.vol); return true; }
+    if (s && !this.buffers[s.file]) console.warn("[Audio] _sfx(" + key + ") — buffer '" + s.file + "' NOT loaded");
     return false;
   }
   _sfxRandom(prefix, count) {
@@ -1558,14 +1587,16 @@ class AudioManager {
     return true;
   }
   playMusic(name, loop) {
-    if (!this.initialized) return;
+    if (!this.initialized) { console.warn("[Audio] playMusic(" + name + ") — not initialized"); return; }
     // No-op if same track already playing
     if (this._currentMusic && this._currentMusic.name === name) return;
     // If buffer not loaded yet, defer
     if (!this.buffers[name]) {
+      console.log("[Audio] playMusic(" + name + ") — buffer not loaded yet, deferring");
       this._pendingMusic = { name: name, loop: !!loop };
       return;
     }
+    console.log("[Audio] playMusic(" + name + ") — PLAYING");
     // Crossfade out old track
     if (this._currentMusic) {
       const old = this._currentMusic;
@@ -1587,7 +1618,8 @@ class AudioManager {
     this._pendingMusic = null;
   }
   stopMusic(fadeTime) {
-    if (!this._currentMusic) return;
+    if (!this._currentMusic) { console.log("[Audio] stopMusic — nothing playing"); return; }
+    console.log("[Audio] stopMusic(" + this._currentMusic.name + ") fade=" + (fadeTime||0.5) + "s");
     const fade = fadeTime !== undefined ? fadeTime : 0.5;
     const old = this._currentMusic;
     old.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + fade);
@@ -1596,6 +1628,7 @@ class AudioManager {
   }
   checkPendingMusic() {
     if (this._pendingMusic && this.buffers[this._pendingMusic.name]) {
+      console.log("[Audio] Pending music now loaded: " + this._pendingMusic.name);
       this.playMusic(this._pendingMusic.name, this._pendingMusic.loop);
     }
   }
@@ -1657,8 +1690,8 @@ class AudioManager {
   poopSound() { this._sfxRandom("poop", 3); }
   growBigSound() { this._sfx("growBig"); }
   extraLifeSound() { this._sfx("extraLife"); }
-  deathSound() { this._sfx("death"); }
-  fallDeathSound() { this._sfx("fallDeath"); }
+  deathSound() { console.log("[Audio] deathSound() called"); this._sfx("death"); }
+  fallDeathSound() { console.log("[Audio] fallDeathSound() called"); this._sfx("fallDeath"); }
   flowerBloomSound() { this._sfx("flowerBloom"); }
   rainbowShotSound() { this._sfx("rainbowShot"); }
   levelCompleteSound() { this._sfx("celebrateUnicorn"); }
@@ -9884,6 +9917,8 @@ class GameStateMachine {
   onStateEnter(state, prev) {
     const g = this.game;
     const audio = g.audio;
+    const stateNames = ["TITLE","PLAYING","DYING","COMPLETE","LEVEL_INTRO","CODE_ENTRY","PAUSED","PLAYER_SELECT","NAME_ENTRY","STORY"];
+    console.log("[State] " + (stateNames[prev]||prev) + " → " + (stateNames[state]||state));
     switch (state) {
       case STATE_TITLE:
         audio.stopMusic(0.8);

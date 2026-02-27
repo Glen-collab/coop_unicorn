@@ -1438,7 +1438,7 @@ const SFX_MAP = {
   shrink:        { file: "shrink_2",       vol: 0.8 },
   hurtGeneric:   { file: "shrink_3",       vol: 0.8 },
   death:         { file: "death_to_character", vol: 0.9 },
-  fallDeath:     { file: "mixkit-player-losing-or-failing-2042", vol: 0.9 },
+  fallDeath:     { file: "fall_in_hole_die", vol: 0.9 },
   timerCountdown:{ file: "timer_countdown",   vol: 0.8 },
 
   // --- Poop sound variants (2-3 random per form) ---
@@ -1560,6 +1560,7 @@ class AudioManager {
   }
   playSample(name, vol) {
     if (!this.initialized || !this.buffers[name]) return;
+    if (this.ctx.state === "suspended") this.ctx.resume();
     const src = this.ctx.createBufferSource();
     src.buffer = this.buffers[name];
     const gain = this.ctx.createGain();
@@ -1596,7 +1597,8 @@ class AudioManager {
       this._pendingMusic = { name: name, loop: !!loop };
       return;
     }
-    console.log("[Audio] playMusic(" + name + ") — PLAYING");
+    console.log("[Audio] playMusic(" + name + ") — PLAYING, ctx.state=" + this.ctx.state);
+    if (this.ctx.state === "suspended") this.ctx.resume();
     // Crossfade out old track
     if (this._currentMusic) {
       const old = this._currentMusic;
